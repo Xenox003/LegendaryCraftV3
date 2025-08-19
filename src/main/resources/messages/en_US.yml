@@ -1,0 +1,11 @@
+# Default English messages for LegendaryCraftV3
+prefix: "&7[&bLegendary&3Craft&7] &r"
+
+commands:
+  error:
+    player-only: "{prefix}&cThis command can only be executed by players."
+  chest:
+    usage: "{prefix}&cUsage: /chest [lock | unlock]"
+    no-target: "{prefix}&cYou need to be facing a chest to use this command."
+  team:
+    hello: "{prefix}&aHello, {player}! &7This is a localized message from the Team command."

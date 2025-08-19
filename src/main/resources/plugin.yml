@@ -2,3 +2,10 @@ name: LegendaryCraftV3
 version: '1.0-SNAPSHOT'
 main: de.jxdev.legendarycraft.v3.LegendaryCraft
 api-version: '1.21'
+commands:
+  team:
+    description: Team Command
+    usage: /team [subcommand]
+  chest:
+    description: Chestlocking Command
+    usage: /chest [lock | unlock]

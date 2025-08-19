@@ -1,0 +1,4 @@
+# LegendaryCraftV3 configuration
+# Set the active language file (located under plugins/LegendaryCraftV3/messages/<language>.yml)
+# The plugin ships with messages/en_US.yml by default. You can add more locales (e.g., de_DE.yml).
+language: en_US
