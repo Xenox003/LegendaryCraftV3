@@ -1,0 +1,4 @@
+name: LegendaryCraftV3
+version: '1.0-SNAPSHOT'
+main: de.jxdev.legendarycraft.v3.LegendaryCraft
+api-version: '1.21'
