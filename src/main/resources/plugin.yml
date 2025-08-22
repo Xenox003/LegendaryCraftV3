@@ -1,11 +1,8 @@
 name: LegendaryCraftV3
-version: '1.0-SNAPSHOT'
+version: '3.0.0'
 main: de.jxdev.legendarycraft.v3.LegendaryCraft
 api-version: '1.21'
-commands:
-  team:
-    description: Team Command
-    usage: /team [subcommand]
-  chest:
-    description: Chestlocking Command
-    usage: /chest [lock | unlock]
+prefix: LegendaryCraftV3
+authors: [ Xenox003 ]
+description: Plugin for LegendaryCraft V3
+website: jxdev.de
