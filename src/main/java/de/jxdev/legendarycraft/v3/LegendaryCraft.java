@@ -3,10 +3,12 @@ package de.jxdev.legendarycraft.v3;
 import de.jxdev.legendarycraft.v3.db.SqliteDatabase;
 import de.jxdev.legendarycraft.v3.i18n.Messages;
 import de.jxdev.legendarycraft.v3.db.team.TeamRepository;
+import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
 
+@Getter
 public final class LegendaryCraft extends JavaPlugin {
 
     private Messages messages;
@@ -53,15 +55,4 @@ public final class LegendaryCraft extends JavaPlugin {
         }
     }
 
-    public Messages getMessages() {
-        return messages;
-    }
-
-    public SqliteDatabase getDatabase() {
-        return database;
-    }
-
-    public TeamRepository getTeamRepository() {
-        return teamRepository;
-    }
 }

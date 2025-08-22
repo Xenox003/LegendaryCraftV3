@@ -1,8 +1,11 @@
 package de.jxdev.legendarycraft.v3.db.team;
 
+import lombok.Getter;
+
 /**
  * Permission levels for team membership, aligned with DB values: 'user', 'admin', 'owner'.
  */
+@Getter
 public enum PermissionLevel {
     USER("user"),
     ADMIN("admin"),
@@ -14,21 +17,13 @@ public enum PermissionLevel {
         this.dbValue = dbValue;
     }
 
-    public String getDbValue() {
-        return dbValue;
-    }
-
     public static PermissionLevel fromDb(String value) {
         if (value == null) return null;
-        switch (value.toLowerCase()) {
-            case "user":
-                return USER;
-            case "admin":
-                return ADMIN;
-            case "owner":
-                return OWNER;
-            default:
-                throw new IllegalArgumentException("Unknown permission level: " + value);
-        }
+        return switch (value.toLowerCase()) {
+            case "user" -> USER;
+            case "admin" -> ADMIN;
+            case "owner" -> OWNER;
+            default -> throw new IllegalArgumentException("Unknown permission level: " + value);
+        };
     }
 }

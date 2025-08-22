@@ -12,7 +12,7 @@ import java.util.logging.Level;
 
 /**
  * Minimal SQLite database handler for Paper plugins.
- *
+ * <p>
  * Notes:
  * - Uses only java.sql types so it compiles without bundling a driver.
  * - At runtime, you still need the SQLite JDBC driver available (e.g., by shading org.xerial:sqlite-jdbc
@@ -87,7 +87,7 @@ public class SqliteDatabase {
     /** Query a single row or return null if none. */
     public synchronized <T> T queryOne(String sql, RowMapper<T> mapper, Object... params) throws SQLException {
         List<T> list = query(sql, mapper, params);
-        return list.isEmpty() ? null : list.get(0);
+        return list.isEmpty() ? null : list.getFirst();
     }
 
     private void ensureConnected() throws SQLException {
@@ -109,18 +109,13 @@ public class SqliteDatabase {
         for (int i = 0; i < params.length; i++) {
             Object p = params[i];
             int idx = i + 1;
-            if (p == null) {
-                ps.setObject(idx, null);
-            } else if (p instanceof byte[]) {
-                ps.setBytes(idx, (byte[]) p);
-            } else if (p instanceof Instant) {
-                ps.setTimestamp(idx, Timestamp.from((Instant) p));
-            } else if (p instanceof java.util.Date) {
-                ps.setTimestamp(idx, new Timestamp(((java.util.Date) p).getTime()));
-            } else if (p instanceof UUID) {
-                ps.setString(idx, p.toString());
-            } else {
-                ps.setObject(idx, p);
+            switch (p) {
+                case null -> ps.setObject(idx, null);
+                case byte[] bytes -> ps.setBytes(idx, bytes);
+                case Instant instant -> ps.setTimestamp(idx, Timestamp.from(instant));
+                case java.util.Date date -> ps.setTimestamp(idx, new Timestamp(date.getTime()));
+                case UUID uuid -> ps.setString(idx, p.toString());
+                default -> ps.setObject(idx, p);
             }
         }
     }

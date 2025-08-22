@@ -12,7 +12,7 @@ import java.util.Objects;
 
 /**
  * Very small YAML-based i18n system.
- *
+ * <p>
  * Files are named messages_<locale>.yml (e.g., messages_en_US.yml).
  * They are searched in the plugin data folder, default versions are bundled in resources and
  * copied over on first run via JavaPlugin#saveResource.
