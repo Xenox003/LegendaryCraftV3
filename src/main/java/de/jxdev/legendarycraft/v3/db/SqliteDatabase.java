@@ -125,6 +125,24 @@ public class SqliteDatabase {
         }
     }
 
+    public synchronized void initializeTeamSchema() throws SQLException {
+        ensureConnected();
+        try (Statement st = connection.createStatement()) {
+            st.execute("CREATE TABLE IF NOT EXISTS teams (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "name TEXT NOT NULL UNIQUE, " +
+                    "prefix TEXT, " +
+                    "color TEXT)");
+
+            st.execute("CREATE TABLE IF NOT EXISTS team_members (" +
+                    "user TEXT NOT NULL, " +
+                    "team INTEGER NOT NULL, " +
+                    "permission TEXT NOT NULL CHECK (permission IN ('user','admin','owner')), " +
+                    "PRIMARY KEY (user, team), " +
+                    "FOREIGN KEY (team) REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE)");
+        }
+    }
+
     public interface RowMapper<T> {
         T mapRow(ResultSet rs) throws SQLException;
     }
