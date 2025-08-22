@@ -2,7 +2,7 @@ package de.jxdev.legendarycraft.v3;
 
 import de.jxdev.legendarycraft.v3.db.SqliteDatabase;
 import de.jxdev.legendarycraft.v3.i18n.Messages;
-import de.jxdev.legendarycraft.v3.team.TeamRepository;
+import de.jxdev.legendarycraft.v3.db.team.TeamRepository;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
@@ -40,13 +40,13 @@ public final class LegendaryCraft extends JavaPlugin {
         }
 
         // Example startup log using i18n
-        getLogger().info(messages.get("plugin.enabled", "version", getDescription().getVersion()));
+        getLogger().info("Plugin initialized.");
     }
 
     @Override
     public void onDisable() {
         if (messages != null) {
-            getLogger().info(messages.get("plugin.disabled"));
+            getLogger().info("Plugin disabled.");
         }
         if (database != null && database.isOpen()) {
             database.close();

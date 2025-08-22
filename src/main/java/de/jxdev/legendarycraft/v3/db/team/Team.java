@@ -1,59 +1,27 @@
-package de.jxdev.legendarycraft.v3.team;
+package de.jxdev.legendarycraft.v3.db.team;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Objects;
 
 /**
  * Team model mapped to the `teams` table.
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Team {
     private Integer id; // null if not persisted yet
     private String name;
     private String prefix;
     private String color;
 
-    public Team() {}
-
-    public Team(Integer id, String name, String prefix, String color) {
-        this.id = id;
-        this.name = name;
-        this.prefix = prefix;
-        this.color = color;
-    }
-
     public Team(String name, String prefix, String color) {
         this(null, name, prefix, color);
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package de.jxdev.legendarycraft.v3.team;
+package de.jxdev.legendarycraft.v3.db.team;
 
 /**
  * Permission levels for team membership, aligned with DB values: 'user', 'admin', 'owner'.

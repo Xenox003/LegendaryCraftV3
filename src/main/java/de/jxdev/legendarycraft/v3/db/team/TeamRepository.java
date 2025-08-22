@@ -1,10 +1,9 @@
-package de.jxdev.legendarycraft.v3.team;
+package de.jxdev.legendarycraft.v3.db.team;
 
 import de.jxdev.legendarycraft.v3.db.SqliteDatabase;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
