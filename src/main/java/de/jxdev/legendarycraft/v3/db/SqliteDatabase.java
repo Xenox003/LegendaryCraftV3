@@ -135,6 +135,12 @@ public class SqliteDatabase {
                     "permission TEXT NOT NULL CHECK (permission IN ('user','admin','owner')), " +
                     "PRIMARY KEY (user, team), " +
                     "FOREIGN KEY (team) REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE)");
+
+            st.execute("CREATE TABLE IF NOT EXISTS team_invites (" +
+                    "user TEXT NOT NULL, " +
+                    "team INTEGER NOT NULL, " +
+                    "PRIMARY KEY (user, team), " +
+                    "FOREIGN KEY (team) REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE)");
         }
     }
 

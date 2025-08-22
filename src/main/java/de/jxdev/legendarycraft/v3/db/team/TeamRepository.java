@@ -97,9 +97,47 @@ public class TeamRepository {
                 this::mapTeam, user.toString());
     }
 
+    /**
+     * Convenience: returns the team of user if they are in exactly one team, else null.
+     */
+    public Team getUserCurrentTeam(UUID user) throws SQLException {
+        List<Team> teams = getTeamsOfUser(user);
+        return teams.isEmpty() ? null : teams.getFirst();
+    }
+
+    public int getMemberCount(int teamId) throws SQLException {
+        Integer cnt = db.queryOne("SELECT COUNT(*) FROM team_members WHERE team = ?", rs -> rs.getInt(1), teamId);
+        return cnt == null ? 0 : cnt;
+    }
+
     public PermissionLevel getUserPermissionInTeam(UUID user, int teamId) throws SQLException {
         String perm = db.queryOne("SELECT permission FROM team_members WHERE user = ? AND team = ?",
                 rs -> rs.getString(1), user.toString(), teamId);
         return perm == null ? null : PermissionLevel.fromDb(perm);
+    }
+
+    // --------------------------- Invites -------------------------
+
+    public void addInvite(UUID user, int teamId) throws SQLException {
+        db.executeUpdate("INSERT OR IGNORE INTO team_invites(user, team) VALUES(?,?)",
+                user.toString(), teamId);
+    }
+
+    public boolean hasInvite(UUID user, int teamId) throws SQLException {
+        Integer one = db.queryOne("SELECT 1 FROM team_invites WHERE user = ? AND team = ?",
+                rs -> rs.getInt(1), user.toString(), teamId);
+        return one != null;
+    }
+
+    public boolean removeInvite(UUID user, int teamId) throws SQLException {
+        int rows = db.executeUpdate("DELETE FROM team_invites WHERE user = ? AND team = ?",
+                user.toString(), teamId);
+        return rows > 0;
+    }
+
+    public List<Team> getInvitesForUser(UUID user) throws SQLException {
+        return db.query("SELECT t.id, t.name, t.prefix, t.color FROM teams t " +
+                        "JOIN team_invites i ON i.team = t.id WHERE i.user = ?",
+                this::mapTeam, user.toString());
     }
 }
