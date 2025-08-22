@@ -1,17 +1,56 @@
 package de.jxdev.legendarycraft.v3;
 
+import de.jxdev.legendarycraft.v3.db.SqliteDatabase;
+import de.jxdev.legendarycraft.v3.i18n.Messages;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.sql.SQLException;
 
 public final class LegendaryCraft extends JavaPlugin {
 
+    private Messages messages;
+    private SqliteDatabase database;
+
     @Override
     public void onEnable() {
-        // Plugin startup logic
+        // Ensure config exists
+        saveDefaultConfig();
 
+        String locale = getConfig().getString("locale", "de_DE");
+        String fallback = getConfig().getString("fallback-locale", "de_DE");
+
+        // Initialize i18n
+        this.messages = new Messages(this, locale, fallback);
+
+        // Initialize SQLite database
+        String dbFile = getConfig().getString("database.file", "storage.db");
+        this.database = new SqliteDatabase(this, dbFile);
+        try {
+            this.database.connect();
+            getLogger().info("SQLite database connected: " + dbFile);
+        } catch (SQLException e) {
+            getLogger().severe("Failed to connect to SQLite database: " + e.getMessage());
+        }
+
+        // Example startup log using i18n
+        getLogger().info(messages.get("plugin.enabled", "version", getDescription().getVersion()));
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        if (messages != null) {
+            getLogger().info(messages.get("plugin.disabled"));
+        }
+        if (database != null && database.isOpen()) {
+            database.close();
+        }
+    }
+
+    public Messages getMessages() {
+        return messages;
+    }
+
+    public SqliteDatabase getDatabase() {
+        return database;
     }
 }
