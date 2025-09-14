@@ -3,11 +3,13 @@ package de.jxdev.legendarycraft.v3;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.db.Database;
+import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
 import de.jxdev.legendarycraft.v3.service.TeamService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -54,6 +56,9 @@ public final class LegendaryCraft extends JavaPlugin {
             LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
             commands.registrar().register(teamCommand);
         });
+
+        // Player List Update Scheduler \\
+        Bukkit.getScheduler().runTaskTimer(this, PlayerListComponents::updateGlobalPlayerlist, 1L, 100L);
 
         getLogger().info("Plugin initialized.");
     }
