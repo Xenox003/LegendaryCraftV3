@@ -1,58 +1,66 @@
 package de.jxdev.legendarycraft.v3;
 
-import de.jxdev.legendarycraft.v3.db.SqliteDatabase;
-import de.jxdev.legendarycraft.v3.i18n.Messages;
-import de.jxdev.legendarycraft.v3.db.team.TeamRepository;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.jxdev.legendarycraft.v3.commands.TeamCommand;
+import de.jxdev.legendarycraft.v3.db.Database;
+import de.jxdev.legendarycraft.v3.teams.TeamRepository;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.SQLException;
+import java.nio.file.Path;
 
 @Getter
 public final class LegendaryCraft extends JavaPlugin {
 
-    private Messages messages;
-    private SqliteDatabase database;
+    public LegendaryCraft() {
+        LegendaryCraft.setInstance(this);
+    }
+
+    @Setter
+    @Getter
+    private static LegendaryCraft instance;
+
+    private Database database;
     private TeamRepository teamRepository;
 
     @Override
     public void onEnable() {
-        // Ensure config exists
+        // Ensure config exists \
         saveDefaultConfig();
 
-        String locale = getConfig().getString("locale", "de_DE");
-        String fallback = getConfig().getString("fallback-locale", "de_DE");
-
-        // Initialize i18n
-        this.messages = new Messages(this, locale, fallback);
-
-        // Initialize SQLite database
-        String dbFile = getConfig().getString("database.file", "storage.db");
-        this.database = new SqliteDatabase(this, dbFile);
         try {
-            this.database.connect();
-            this.database.initializeTeamSchema();
-            getLogger().info("SQLite database connected: " + dbFile);
-            getLogger().info("Team schema ensured (teams, team_members).");
+            // Initialize Database using data folder + config value
+            String dbFileName = getConfig().getString("database.file", "storage.db");
+            Path dbPath = getDataFolder().toPath().resolve(dbFileName);
+            this.database = new Database(dbPath);
+            this.database.init();
 
-            // Initialize repositories
-            this.teamRepository = new TeamRepository(this.database);
-        } catch (SQLException e) {
-            getLogger().severe("Failed to initialize SQLite database: " + e.getMessage());
+            // Create and load repository cache
+            this.teamRepository = new TeamRepository(database);
+            this.teamRepository.loadAll();
+        } catch (Exception e) {
+            getLogger().severe("Failed to initialize database/repository: " + e.getMessage());
+            e.printStackTrace();
+            // Disable plugin if critical
+            getServer().getPluginManager().disablePlugin(this);
+            return;
         }
 
-        // Example startup log using i18n
+        // Register Commands (use repository)
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+            LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
+            commands.registrar().register(teamCommand);
+        });
+
         getLogger().info("Plugin initialized.");
     }
 
     @Override
     public void onDisable() {
-        if (messages != null) {
-            getLogger().info("Plugin disabled.");
-        }
-        if (database != null && database.isOpen()) {
-            database.close();
-        }
+        getLogger().info("Plugin disabled.");
     }
 
 }

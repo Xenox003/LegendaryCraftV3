@@ -20,6 +20,8 @@ dependencies {
     // Lombok for automatic getters/setters and other boilerplate reduction
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    implementation("org.xerial:sqlite-jdbc:3.46.0.0") // JDBC driver
 }
 
 tasks {

@@ -6,3 +6,12 @@ prefix: LegendaryCraftV3
 authors: [ Xenox003 ]
 description: Plugin for LegendaryCraft V3
 website: jxdev.de
+commands:
+  team:
+    description: Team management commands
+    usage: /team <create|delete|invite|join|leave|settings|admin>
+    aliases: [teams]
+permissions:
+  legendarycraft.team.admin:
+    description: Allows using /team admin commands
+    default: op
