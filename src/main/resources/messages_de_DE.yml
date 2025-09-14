@@ -1,8 +1,0 @@
-# Standard-Nachrichten (Deutsch) für LegendaryCraft V3
-plugin:
-  enabled: "LegendaryCraft wurde aktiviert. Version: {version}"
-  disabled: "LegendaryCraft wurde deaktiviert. Auf Wiedersehen!"
-  reloaded: "Konfiguration und Nachrichten wurden neu geladen."
-example:
-  greet: "Hallo, {player}! Willkommen bei LegendaryCraft."
-  coins: "Du hast {amount} Münzen."

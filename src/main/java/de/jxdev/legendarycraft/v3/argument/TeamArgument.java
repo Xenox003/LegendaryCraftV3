@@ -1,7 +1,5 @@
 package de.jxdev.legendarycraft.v3.argument;
 
-import com.mojang.brigadier.LiteralMessage;
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -9,31 +7,30 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import de.jxdev.legendarycraft.v3.entities.Team;
-import de.jxdev.legendarycraft.v3.teams.TeamRepository;
+import de.jxdev.legendarycraft.v3.models.Team;
+import de.jxdev.legendarycraft.v3.service.TeamService;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public final class TeamArgument implements CustomArgumentType.Converted<Team, String> {
+public final class TeamArgument implements CustomArgumentType.Converted<@NotNull Team, @NotNull String> {
 
     private static final DynamicCommandExceptionType TEAM_NOT_FOUND =
             new DynamicCommandExceptionType(name ->
                     MessageComponentSerializer.message().serialize(
-                            Component.text("No team called '").append(Component.text(String.valueOf(name))).append(Component.text("'"))
+                            Component.text("Kein team mit dem namen '")
+                                    .append(Component.text(String.valueOf(name)))
+                                    .append(Component.text("' gefunden!"))
                     )
             );
 
-    private final TeamRepository repo;
+    private final TeamService repo;
 
-    public TeamArgument(TeamRepository repo) {
+    public TeamArgument(TeamService repo) {
         this.repo = repo;
     }
 

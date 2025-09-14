@@ -1,8 +1,4 @@
 # LegendaryCraft V3 configuration
-# Locale code for messages. Provide a corresponding messages_<locale>.yml in the plugin folder.
-locale: de_DE
-# Default (fallback) locale if a key is missing in the active locale
-fallback-locale: de_DE
 
 # Database configuration
 # SQLite database file name stored in the plugin data folder

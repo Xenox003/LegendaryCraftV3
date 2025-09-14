@@ -3,7 +3,7 @@ package de.jxdev.legendarycraft.v3;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.db.Database;
-import de.jxdev.legendarycraft.v3.teams.TeamRepository;
+import de.jxdev.legendarycraft.v3.service.TeamService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private static LegendaryCraft instance;
 
     private Database database;
-    private TeamRepository teamRepository;
+    private TeamService teamService;
 
     @Override
     public void onEnable() {
@@ -39,8 +39,8 @@ public final class LegendaryCraft extends JavaPlugin {
             this.database.init();
 
             // Create and load repository cache
-            this.teamRepository = new TeamRepository(database);
-            this.teamRepository.loadAll();
+            this.teamService = new TeamService(database);
+            this.teamService.loadAll();
         } catch (Exception e) {
             getLogger().severe("Failed to initialize database/repository: " + e.getMessage());
             e.printStackTrace();
