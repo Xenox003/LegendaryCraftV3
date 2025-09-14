@@ -29,4 +29,12 @@ public class Team {
                 .clickEvent(ClickEvent.runCommand("/team info " + this.name))
                 .hoverEvent(Component.text("Klicke um Informationen zu diesem Team anzuzeigen."));
     }
+
+    public Component getPrefixComponent() {
+        Style style = Style.style(this.color);
+        return Component.empty()
+                .append(Component.text("[", NamedTextColor.DARK_GRAY))
+                .append(Component.text(this.prefix, style))
+                .append(Component.text("]", NamedTextColor.DARK_GRAY));
+    }
 }
