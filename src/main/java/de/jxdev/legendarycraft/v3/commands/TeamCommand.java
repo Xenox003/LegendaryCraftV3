@@ -29,6 +29,8 @@ public class TeamCommand {
 
     public LiteralCommandNode<CommandSourceStack> getCommand() {
         return Commands.literal("team")
+
+                /* ---------- PUBLIC COMMANDS ---------- */
                 .then(Commands.literal("info")
                         .then(Commands.argument("team", new TeamArgument(plugin.getTeamRepository()))
                                 .executes(this::teamInfoExecutor)
@@ -37,6 +39,8 @@ public class TeamCommand {
                 .then(Commands.literal("list")
                         .executes(this::teamListExecutor)
                 )
+
+                /* ---------- TEAM MANAGEMENT ---------- */
                 .then(Commands.literal("create")
                         .requires(source -> source.getSender() instanceof Player)
                         .then(Commands.argument("name", StringArgumentType.string())
@@ -48,8 +52,14 @@ public class TeamCommand {
                                 )
                         )
                 )
-                .then(Commands.literal("delete"))
+                .then(Commands.literal("delete")
+                        .requires(source -> source.getSender() instanceof Player)
+                        // TODO: require team membership with level OWNER
+                        .executes(this::teamDeleteExecutor)
+                )
                 .then(Commands.literal("settings")
+                        .requires(source -> source.getSender() instanceof Player)
+                        // TODO: require team membership with level OWNER
                         .then(Commands.literal("name")
                                 .then(Commands.argument("name", StringArgumentType.string())
                                 )
@@ -61,18 +71,38 @@ public class TeamCommand {
                                 .then(Commands.argument("prefix", StringArgumentType.string()))
                         )
                 )
+                .then(Commands.literal("kick")
+                        .requires(source -> source.getSender() instanceof Player)
+                        // TODO: require team membership with level OWNER
+                )
+
+                /* ---------- TEAM MEMBERSHIPS ---------- */
                 .then(Commands.literal("invite")
-                        .then(Commands.argument("player", ArgumentTypes.player()))
+                        .requires(source -> source.getSender() instanceof Player)
+                        .then(Commands.argument("player", ArgumentTypes.player())
+                                .executes(this::teamInviteExecutor)
+                        )
                 )
                 .then(Commands.literal("join")
+                        .requires(source -> source.getSender() instanceof Player)
                         .then(Commands.argument("team", new TeamArgument(plugin.getTeamRepository()))
                                 .executes(this::teamJoinExecutor)
                         )
                 )
-                .then(Commands.literal("leave"))
-                .then(Commands.literal("kick"))
-                .then(Commands.literal("chat"))
-                .then(Commands.literal("chat_toggle"))
+                .then(Commands.literal("leave")
+                        .requires(source -> source.getSender() instanceof Player)
+                        .executes(this::teamLeaveExecutor)
+                )
+
+                /* ---------- PUBLIC CHAT ---------- */
+                .then(Commands.literal("chat")
+                        .requires(source -> source.getSender() instanceof Player)
+                        .then(Commands.argument("message", StringArgumentType.greedyString())
+                                .executes(this::teamChatExecutor)
+                        ))
+                .then(Commands.literal("chat_toggle")
+                        .requires(source -> source.getSender() instanceof Player)
+                )
                 /*
                 .then(Commands.literal("admin")
                         .requires(source -> source.getSender().hasPermission("lc.team.admin"))
@@ -122,30 +152,26 @@ public class TeamCommand {
     }
 
     private int teamDeleteExecutor(CommandContext<CommandSourceStack> context) {
+        Player sender = (Player) context.getSource().getSender();
+
         throw new NotImplementedException();
     }
 
     private int teamSettingsNameExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
         throw new NotImplementedException();
     }
 
     private int teamSettingsColorExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
         throw new NotImplementedException();
     }
 
     private int teamSettingsPrefixExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        throw new NotImplementedException();
-    }
+        Player sender = (Player) context.getSource().getSender();
 
-    private int teamInviteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        throw new NotImplementedException();
-    }
-
-    private int teamJoinExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        throw new NotImplementedException();
-    }
-
-    private int teamLeaveExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         throw new NotImplementedException();
     }
 
@@ -153,11 +179,33 @@ public class TeamCommand {
         throw new NotImplementedException();
     }
 
+    private int teamInviteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
+        throw new NotImplementedException();
+    }
+
+    private int teamJoinExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
+        throw new NotImplementedException();
+    }
+
+    private int teamLeaveExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
+        throw new NotImplementedException();
+    }
+
     private int teamChatExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
         throw new NotImplementedException();
     }
 
     private int teamChatToggleExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = (Player) context.getSource().getSender();
+
         throw new NotImplementedException();
     }
 
