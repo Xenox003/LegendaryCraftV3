@@ -40,6 +40,7 @@ public class Database implements AutoCloseable {
                   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """);
+            st.execute("CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name)");
 
             // Table for Team Members \\
             st.execute("""
@@ -50,7 +51,6 @@ public class Database implements AutoCloseable {
                   FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
-            st.execute("CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_members_team ON team_members(team_id)");
 
             // Table for Team Invitations \\

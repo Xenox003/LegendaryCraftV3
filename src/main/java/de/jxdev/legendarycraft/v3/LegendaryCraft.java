@@ -11,9 +11,6 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -55,7 +52,10 @@ public final class LegendaryCraft extends JavaPlugin {
             return;
         }
 
-        // Register Commands (use repository)
+        // Init Translations \\
+        I18nManager.init();
+
+        // Register Commands \\
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
             commands.registrar().register(teamCommand);

@@ -22,9 +22,7 @@ public final class TeamArgument implements CustomArgumentType.Converted<@NotNull
     private static final DynamicCommandExceptionType TEAM_NOT_FOUND =
             new DynamicCommandExceptionType(name ->
                     MessageComponentSerializer.message().serialize(
-                            Component.text("Kein team mit dem namen '")
-                                    .append(Component.text(String.valueOf(name)))
-                                    .append(Component.text("' gefunden!"))
+                            Component.translatable("team.error.no_team_with_name", Component.text(String.valueOf(name)))
                     )
             );
 

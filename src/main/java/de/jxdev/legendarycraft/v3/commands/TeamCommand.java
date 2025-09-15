@@ -1,7 +1,6 @@
 package de.jxdev.legendarycraft.v3.commands;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -19,29 +18,31 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.NotImplementedException;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class TeamCommand {
 
     private static final SimpleCommandExceptionType PLAYER_NOT_IN_TEAM = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
-            Component.text("Du kannst diesen Befehl nur nutzen, wenn du in einem Team bist!", NamedTextColor.RED)
+            Component.translatable("team.error.member_required", NamedTextColor.RED)
     ));
     private static final DynamicCommandExceptionType PLAYER_DOESNT_OWN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
-            Component.text("Du kannst diesen Befehl nur nutzen, wenn du der Besitzer des Team ")
-                    .append(((Team)team).getChatComponent())
-                    .append(Component.text(" bist!"))
+            Component.translatable("team.error.no_owner", ((Team)team).getChatComponent())
                     .color(NamedTextColor.RED)
     ));
     private static final DynamicCommandExceptionType PLAYER_ALREADY_IN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
-            Component.text("Du kannst diesen Befehl nur nutzen, wenn du aktuell in keinem Team bist!\n")
-                    .append(Component.text("Im Moment bist du noch Mitglied von "))
-                    .append(((Team)team).getChatComponent())
-                    .append(Component.text("!"))
+            Component.translatable("team.error.no_member_required")
+                    .append(Component.text("\n"))
+                    .append(Component.translatable("team.info.current_team", ((Team)team).getChatComponent()))
                     .color(NamedTextColor.RED)
     ));
 
@@ -177,14 +178,34 @@ public class TeamCommand {
         CommandSender sender = context.getSource().getSender();
         Team team = context.getArgument("team", Team.class);
 
+        Component response = Component.translatable("team.info.members", team.getChatComponent());
 
-        throw new NotImplementedException();
+        for (UUID memberId : team.getMembers().keySet()) {
+            OfflinePlayer player = Bukkit.getOfflinePlayer(memberId);
+            String playerName = (player.getName() != null)
+                    ? player.getName()
+                    : player.getUniqueId().toString();
+            response = response.append(Component.newline())
+                    .append(Component.text("- " + playerName, NamedTextColor.GRAY));
+        }
+
+        sender.sendMessage(response);
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamListExecutor(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
+        List<Team> teams = plugin.getTeamService().getAll();
 
-        throw new NotImplementedException();
+        Component response = Component.translatable("team.info.list");
+
+        for (Team team : teams) {
+            response = response.append(Component.newline())
+                    .append(Component.translatable("team.info.list_item", team.getChatComponent(), Component.text(team.getMembers().size())));
+        }
+
+        sender.sendMessage(response);
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamCreateExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -205,12 +226,11 @@ public class TeamCommand {
         try {
             team = plugin.getTeamService().createTeam(name, prefix, sender.getUniqueId(), color);
 
-            Component response = Component.text("Team erstellt: ")
-                    .append(team.getChatComponent());
+            Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
             sender.sendMessage(response);
             return Command.SINGLE_SUCCESS;
         } catch (SQLException e) {
-            Component errorResponse = Component.text("Interner Fehler beim erstellen des Teams!", NamedTextColor.RED);
+            Component errorResponse = Component.translatable("common.error.internal_error", NamedTextColor.RED);
             sender.sendMessage(errorResponse);
 
             plugin.getLogger().severe("Failed to create team: " + e.getMessage());
@@ -227,15 +247,13 @@ public class TeamCommand {
         try {
             this.plugin.getTeamService().deleteTeam(team);
 
-            sender.sendMessage(Component.text("Das Team ")
-                    .append(team.getChatComponent())
-                    .append(Component.text(" wurde erfolgreich gelöscht"))
+            sender.sendMessage(Component.translatable("team.success.delete", team.getChatComponent())
                     .color(NamedTextColor.GREEN)
             );
 
             return Command.SINGLE_SUCCESS;
         } catch (SQLException e) {
-            Component errorResponse = Component.text("Interner Fehler beim löschen des Teams!", NamedTextColor.RED);
+            Component errorResponse = Component.translatable("common.error.internal_error", NamedTextColor.RED);
             sender.sendMessage(errorResponse);
 
             plugin.getLogger().severe("Failed to delete team: " + e.getMessage());
