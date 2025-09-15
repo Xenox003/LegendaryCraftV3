@@ -3,7 +3,8 @@ package de.jxdev.legendarycraft.v3;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.db.Database;
-import de.jxdev.legendarycraft.v3.events.PlayerJoinListener;
+import de.jxdev.legendarycraft.v3.events.PlayerChatListener;
+import de.jxdev.legendarycraft.v3.events.PlayerJoinLeaveListener;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
 import de.jxdev.legendarycraft.v3.service.ChestService;
 import de.jxdev.legendarycraft.v3.service.PlayerNameService;
@@ -13,7 +14,6 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Chest;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -77,7 +77,8 @@ public final class LegendaryCraft extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, PlayerListComponents::updateGlobalPlayerlist, 1L, 100L);
 
         // Events \\
-        Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
 
         getLogger().info("Plugin initialized.");
     }

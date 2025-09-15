@@ -16,9 +16,10 @@ public final class I18nManager {
 
     public static void init() {
         TranslationStore.StringBased<MessageFormat> store = TranslationStore.messageFormat(Key.key("legendarycraft", "lang"));
+        store.defaultLocale(Locale.GERMANY);
         translateStores(
                 store,
-                Locale.GERMAN
+                Locale.GERMANY
         );
         GlobalTranslator.translator().addSource(store);
     }
