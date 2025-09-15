@@ -1,5 +1,7 @@
 package de.jxdev.legendarycraft.v3.db;
 
+import de.jxdev.legendarycraft.v3.models.BlockPos;
+import de.jxdev.legendarycraft.v3.models.LockedChest;
 import de.jxdev.legendarycraft.v3.models.Team;
 import de.jxdev.legendarycraft.v3.models.TeamMemberRole;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -63,6 +65,19 @@ public class Database implements AutoCloseable {
                 )
             """);
             st.execute("CREATE INDEX IF NOT EXISTS idx_invitations_team ON team_invitations(team_id)");
+
+            // Table for locked chests \\
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS locked_chests (
+                    team_id INTEGER NOT NULL,
+                    world STRING NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    z INTEGER NOT NULL,
+                    FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+                )
+            """);
+            st.execute("CREATE INDEX IF NOT EXISTS idx_locked_chests ON locked_chests(team_id)");
 
             // Trigger to auto-update updated_at
             st.execute("""
@@ -277,6 +292,51 @@ public class Database implements AutoCloseable {
             }
         }
         return map;
+    }
+
+    private LockedChest mapLockedChest(ResultSet rs) throws SQLException {
+        int teamId = rs.getInt("team_id");
+        UUID worldId = UUID.fromString(rs.getString("world"));
+        int x = rs.getInt("x");
+        int y = rs.getInt("Y");
+        int z = rs.getInt("Z");
+        BlockPos pos = new BlockPos(worldId, x, y, z);
+        return new LockedChest(teamId, pos);
+    }
+
+    public List<LockedChest> listLockedChests() throws SQLException {
+        String sql = "SELECT team_id, world, x, y, z FROM locked_chests";
+        try (Connection c = getConnection(); PreparedStatement st = c.prepareStatement(sql)) {
+            try (ResultSet rs = st.executeQuery()) {
+                List<LockedChest> chests = new ArrayList<>();
+                while (rs.next()) chests.add(mapLockedChest(rs));
+                return chests;
+            }
+        }
+    }
+
+    public LockedChest createLockedChest(BlockPos pos, int teamId) throws SQLException {
+        String sql = "INSERT INTO locked_chests(team_id, world, x, y, z) VALUES(?, ?, ?, ?, ?)";
+        try (Connection c = getConnection(); PreparedStatement st = c.prepareStatement(sql)) {
+            st.setInt(1, teamId);
+            st.setString(2, pos.worldId().toString());
+            st.setInt(3, pos.x());
+            st.setInt(4, pos.y());
+            st.setInt(5, pos.z());
+            st.executeUpdate();
+            return new LockedChest(teamId, pos);
+        }
+    }
+
+    public void deleteLockedChest(BlockPos pos) throws SQLException {
+        String sql = "DELETE FROM locked_chests WHERE world=? AND x=? AND y=? AND z=?";
+        try (Connection c = getConnection(); PreparedStatement st = c.prepareStatement(sql)) {
+            st.setString(1, pos.worldId().toString());
+            st.setInt(2, pos.x());
+            st.setInt(3, pos.y());
+            st.setInt(4, pos.z());
+            st.executeUpdate();
+        }
     }
 
     @Override

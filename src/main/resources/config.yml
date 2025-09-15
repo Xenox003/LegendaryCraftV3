@@ -5,3 +5,6 @@
 # If you change this, restart the server to recreate/connect to the new file.
 database:
   file: storage.db
+
+chest:
+  max_per_team_member: 2

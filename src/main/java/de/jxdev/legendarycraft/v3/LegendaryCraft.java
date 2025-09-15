@@ -5,12 +5,14 @@ import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.db.Database;
 import de.jxdev.legendarycraft.v3.events.PlayerJoinListener;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
+import de.jxdev.legendarycraft.v3.service.ChestService;
 import de.jxdev.legendarycraft.v3.service.TeamService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
+import org.bukkit.block.Chest;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -28,6 +30,7 @@ public final class LegendaryCraft extends JavaPlugin {
 
     private Database database;
     private TeamService teamService;
+    private ChestService chestService;
 
     @Override
     public void onEnable() {
@@ -41,12 +44,16 @@ public final class LegendaryCraft extends JavaPlugin {
             this.database = new Database(dbPath);
             this.database.init();
 
-            // Create and load repository cache
+            // Init TeamService \\
             this.teamService = new TeamService(database);
             this.teamService.loadAll();
+
+            // Init ChestService \\
+            int maxChestsPerTeamMember = getConfig().getInt("chest.max_per_team_member", 1);
+            this.chestService = new ChestService(database, maxChestsPerTeamMember);
+            this.chestService.loadAll();
         } catch (Exception e) {
             getLogger().severe("Failed to initialize database/repository: " + e.getMessage());
-            e.printStackTrace();
             // Disable plugin if critical
             getServer().getPluginManager().disablePlugin(this);
             return;

@@ -11,6 +11,8 @@ import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.TeamArgument;
 import de.jxdev.legendarycraft.v3.models.Team;
 import de.jxdev.legendarycraft.v3.models.TeamMemberRole;
+import de.jxdev.legendarycraft.v3.util.CommandUtil;
+import de.jxdev.legendarycraft.v3.util.TeamCommandUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
@@ -32,59 +34,6 @@ import java.util.function.Predicate;
 
 public class TeamCommand {
 
-    private static final SimpleCommandExceptionType PLAYER_NOT_IN_TEAM = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
-            Component.translatable("team.error.member_required", NamedTextColor.RED)
-    ));
-    private static final DynamicCommandExceptionType PLAYER_DOESNT_OWN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
-            Component.translatable("team.error.no_owner", ((Team)team).getChatComponent())
-                    .color(NamedTextColor.RED)
-    ));
-    private static final DynamicCommandExceptionType PLAYER_ALREADY_IN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
-            Component.translatable("team.error.no_member_required")
-                    .append(Component.text("\n"))
-                    .append(Component.translatable("team.info.current_team", ((Team)team).getChatComponent()))
-                    .color(NamedTextColor.RED)
-    ));
-
-    private final Predicate<CommandSourceStack> PLAYER_ONLY =
-            src -> src.getSender() instanceof Player;
-
-    /**
-     * Gets the current player's team
-     * @return the current player's team
-     * @throws CommandSyntaxException when the player is not in a team
-     */
-    private Team getCurrentPlayerTeam(Player player) throws CommandSyntaxException {
-        Optional<Team> team = this.plugin.getTeamService().getPlayerTeam(player.getUniqueId());
-        if (team.isEmpty()) {
-            throw PLAYER_NOT_IN_TEAM.create();
-        }
-
-        return team.get();
-    }
-
-    /**
-     * Checks if the given player has no team.
-     * @throws CommandSyntaxException when the player already has a team
-     */
-    private void checkIfPlayerHasNoTeam(Player player) throws CommandSyntaxException {
-        Optional<Team> team = this.plugin.getTeamService().getPlayerTeam(player.getUniqueId());
-        if (team.isPresent()) {
-            throw PLAYER_ALREADY_IN_TEAM.create(team.get());
-        }
-    }
-
-    /**
-     * Checks if the given player owns the given team.
-     * @throws CommandSyntaxException when the player doesn't own the team
-     */
-    private void checkPlayerOwnsTeam(Player player, Team team) throws CommandSyntaxException {
-        TeamMemberRole role = team.getMembers().get(player.getUniqueId());
-        if (role != TeamMemberRole.OWNER) {
-            throw PLAYER_DOESNT_OWN_TEAM.create(team);
-        }
-    }
-
     private final LegendaryCraft plugin = LegendaryCraft.getInstance();
 
     public LiteralCommandNode<CommandSourceStack> getCommand() {
@@ -102,7 +51,7 @@ public class TeamCommand {
 
                 /* ---------- TEAM MANAGEMENT ---------- */
                 .then(Commands.literal("create")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .then(Commands.argument("prefix", StringArgumentType.string())
                                     .executes(this::teamCreateExecutor)
@@ -113,11 +62,11 @@ public class TeamCommand {
                         )
                 )
                 .then(Commands.literal("delete")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .executes(this::teamDeleteExecutor)
                 )
                 .then(Commands.literal("settings")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.literal("name")
                                 .then(Commands.argument("name", StringArgumentType.string())
                                 )
@@ -130,7 +79,7 @@ public class TeamCommand {
                         )
                 )
                 .then(Commands.literal("kick")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .executes(this::teamKickExecutor)
                         )
@@ -138,30 +87,30 @@ public class TeamCommand {
 
                 /* ---------- TEAM MEMBERSHIPS ---------- */
                 .then(Commands.literal("invite")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .executes(this::teamInviteExecutor)
                         )
                 )
                 .then(Commands.literal("join")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("team", new TeamArgument(plugin.getTeamService()))
                                 .executes(this::teamJoinExecutor)
                         )
                 )
                 .then(Commands.literal("leave")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .executes(this::teamLeaveExecutor)
                 )
 
                 /* ---------- PUBLIC CHAT ---------- */
                 .then(Commands.literal("chat")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("message", StringArgumentType.greedyString())
                                 .executes(this::teamChatExecutor)
                         ))
                 .then(Commands.literal("chat_toggle")
-                        .requires(PLAYER_ONLY)
+                        .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                 )
                 /*
                 .then(Commands.literal("admin")
@@ -209,11 +158,11 @@ public class TeamCommand {
     }
 
     private int teamCreateExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         String name = StringArgumentType.getString(context, "name");
         String prefix = StringArgumentType.getString(context, "prefix");
 
-        checkIfPlayerHasNoTeam(sender);
+        TeamCommandUtil.checkIfPlayerHasNoTeam(sender);
 
         NamedTextColor color = null;
         try {
@@ -222,9 +171,8 @@ public class TeamCommand {
             // Ignored, color is optional
         }
 
-        Team team = null;
         try {
-            team = plugin.getTeamService().createTeam(name, prefix, sender.getUniqueId(), color);
+            Team team = plugin.getTeamService().createTeam(name, prefix, sender.getUniqueId(), color);
 
             Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
             sender.sendMessage(response);
@@ -240,9 +188,9 @@ public class TeamCommand {
     }
 
     private int teamDeleteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
-        Team team = getCurrentPlayerTeam(sender);
-        checkPlayerOwnsTeam(sender, team);
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        Team team = TeamCommandUtil.getCurrentPlayerTeam(sender);
+        TeamCommandUtil.checkPlayerOwnsTeam(sender, team);
 
         try {
             this.plugin.getTeamService().deleteTeam(team);
@@ -263,53 +211,55 @@ public class TeamCommand {
     }
 
     private int teamSettingsNameExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamSettingsColorExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamSettingsPrefixExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamKickExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+
         throw new NotImplementedException();
     }
 
     private int teamInviteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamJoinExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamLeaveExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamChatExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }
 
     private int teamChatToggleExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Player sender = (Player) context.getSource().getSender();
+        Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
 
         throw new NotImplementedException();
     }

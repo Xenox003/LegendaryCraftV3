@@ -53,7 +53,7 @@ public class TeamService {
         byId.remove(t.getId());
         byName.remove(t.getName().toLowerCase(Locale.ROOT));
         for (UUID m : t.getMembers().keySet()) {
-            playerToTeam.put(m, t.getId());
+            playerToTeam.remove(m, t.getId());
         }
     }
 

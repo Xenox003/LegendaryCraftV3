@@ -27,7 +27,7 @@ public class Team {
         Style style = Style.style(this.color, TextDecoration.UNDERLINED);
         return Component.text(this.name,style)
                 .clickEvent(ClickEvent.runCommand("/team info " + this.name))
-                .hoverEvent(Component.text("Klicke um Informationen zu diesem Team anzuzeigen."));
+                .hoverEvent(Component.translatable("team.info.show_more"));
     }
 
     public Component getPrefixComponent() {
