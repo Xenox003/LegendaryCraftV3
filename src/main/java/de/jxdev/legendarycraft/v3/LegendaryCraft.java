@@ -6,6 +6,7 @@ import de.jxdev.legendarycraft.v3.db.Database;
 import de.jxdev.legendarycraft.v3.events.PlayerJoinListener;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
 import de.jxdev.legendarycraft.v3.service.ChestService;
+import de.jxdev.legendarycraft.v3.service.PlayerNameService;
 import de.jxdev.legendarycraft.v3.service.TeamService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -31,6 +32,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private Database database;
     private TeamService teamService;
     private ChestService chestService;
+    private PlayerNameService playerNameService;
 
     @Override
     public void onEnable() {
@@ -52,6 +54,9 @@ public final class LegendaryCraft extends JavaPlugin {
             int maxChestsPerTeamMember = getConfig().getInt("chest.max_per_team_member", 1);
             this.chestService = new ChestService(database, maxChestsPerTeamMember);
             this.chestService.loadAll();
+
+            // Init PlayerNameService \\
+            this.playerNameService = new PlayerNameService();
         } catch (Exception e) {
             getLogger().severe("Failed to initialize database/repository: " + e.getMessage());
             // Disable plugin if critical
