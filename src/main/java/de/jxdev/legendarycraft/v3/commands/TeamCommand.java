@@ -35,6 +35,9 @@ public class TeamCommand {
     private final SimpleCommandExceptionType PREFIX_TOO_LONG = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
             Component.translatable("team.error.prefix_too_long", NamedTextColor.RED)
     ));
+    private final SimpleCommandExceptionType NAME_TOO_LONG = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
+            Component.translatable("team.error.name_too_long", NamedTextColor.RED)
+    ));
     private final SimpleCommandExceptionType NAME_ALREADY_USED = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
             Component.translatable("team.error.name_already_used", NamedTextColor.RED)
     ));
@@ -56,12 +59,10 @@ public class TeamCommand {
                 .then(Commands.literal("create")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.argument("name", StringArgumentType.string())
-                                .then(Commands.argument("prefix", StringArgumentType.string())
-                                    .executes(this::teamCreateExecutor)
-                                    .then(Commands.argument("color", ArgumentTypes.namedColor())
-                                            .executes(this::teamCreateExecutor)
-                                    )
+                                .then(Commands.argument("color", ArgumentTypes.namedColor())
+                                        .executes(this::teamCreateExecutor)
                                 )
+                                .executes(this::teamCreateExecutor)
                         )
                 )
                 .then(Commands.literal("delete")
@@ -169,10 +170,10 @@ public class TeamCommand {
     private int teamCreateExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         String name = StringArgumentType.getString(context, "name");
-        String prefix = StringArgumentType.getString(context, "prefix");
+        //String prefix = StringArgumentType.getString(context, "prefix");
 
         // Validate Prefix \\
-        if (prefix.length() > 10) throw PREFIX_TOO_LONG.create();
+        if (name.length() > 10) throw NAME_TOO_LONG.create();
 
         // Validate Team Membership \\
         TeamUtil.checkIfPlayerHasNoTeam(sender);
@@ -187,7 +188,7 @@ public class TeamCommand {
             // Ignored, color is optional
         }
 
-        Team team = plugin.getTeamService().createTeam(name, prefix, color, sender.getUniqueId());
+        Team team = plugin.getTeamService().createTeam(name, name, color, sender.getUniqueId());
 
         Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
         sender.sendMessage(response);
