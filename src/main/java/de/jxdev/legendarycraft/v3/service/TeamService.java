@@ -1,187 +1,50 @@
 package de.jxdev.legendarycraft.v3.service;
 
-import de.jxdev.legendarycraft.v3.db.Database;
-import de.jxdev.legendarycraft.v3.models.Team;
-import de.jxdev.legendarycraft.v3.models.TeamMemberRole;
+import de.jxdev.legendarycraft.v3.data.models.team.*;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-import javax.annotation.Nullable;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-public class TeamService {
-    private final Database db;
+public interface TeamService {
+    public Optional<Team> getTeam(int teamId);
+    public Optional<Team> getTeam(String teamName);
+    public Optional<Team> getTeamByPlayer(UUID playerId);
 
-    private final Map<Integer, Team> byId = new ConcurrentHashMap<>();
-    private final Map<String, Team> byName = new ConcurrentHashMap<>(); // lowercased
-    private final Map<UUID, Integer> playerToTeam = new ConcurrentHashMap<>();
+    public Optional<TeamCacheRecord> getCachedTeam(int teamId);
+    public Optional<TeamCacheRecord> getCachedTeamByPlayer(UUID playerId);
+    public Optional<Integer> getTeamIdByPlayer(UUID playerId);
 
-    public TeamService(Database db) {
-        this.db = db;
-    }
+    public Team createTeam(String teamName, String prefix, UUID creator);
+    public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator);
+    public void deleteTeam(int teamId);
 
-    /**
-     * Loads all Team records from the database into memory
-     */
-    public synchronized void loadAll() throws SQLException {
-        byId.clear();
-        byName.clear();
-        playerToTeam.clear();
-        for (Team t : db.listTeams()) {
-            index(t);
-        }
-    }
+    List<Team> getAll();
 
-    /**
-     * Indexes a Team record in memory
-     * @param t Team to index
-     */
-    private void index(Team t) {
-        byId.put(t.getId(), t);
-        byName.put(t.getName().toLowerCase(Locale.ROOT), t);
-        for (UUID m : t.getMembers().keySet()) {
-            playerToTeam.put(m, t.getId());
-        }
-    }
+    List<TeamWithMemberCount> getAllWithMemberCount();
 
-    /**
-     * Removes a Team record from memory
-     * @param t Team to remove
-     */
-    private void deindex(Team t) {
-        byId.remove(t.getId());
-        byName.remove(t.getName().toLowerCase(Locale.ROOT));
-        for (UUID m : t.getMembers().keySet()) {
-            playerToTeam.remove(m, t.getId());
-        }
-    }
+    public void setTeamPrefix(int teamId, String prefix);
+    public void setTeamColor(int teamId, NamedTextColor color);
+    public void setTeamName(int teamId, String teamName);
 
-    /**
-     * Gets a Team by name, or empty if not found
-     * @param name Name of the Team
-     */
-    public Optional<Team> getByName(String name) {
-        if (name == null) return Optional.empty();
-        return Optional.ofNullable(byName.get(name.toLowerCase(Locale.ROOT)));
-    }
+    public void addPlayerToTeam(int teamId, UUID playerId);
+    public void addPlayerToTeam(int teamId, UUID playerId, TeamMemberRole role);
 
-    /**
-     * Gets a Team by ID, or empty if not found
-     * @param id Id of the Team
-     */
-    public Optional<Team> getById(int id) {
-        return Optional.ofNullable(byId.get(id));
-    }
+    List<TeamMember> getMemberList(int teamId);
+    int getMemberCount(int teamId);
 
-    /**
-     * Gets a list of all Teams
-     */
-    public List<Team> getAll() {
-        return new ArrayList<>(byId.values());
-    }
+    Optional<TeamMemberRole> getPlayerMemberRole(int teamId, UUID playerId);
 
-    /**
-     * Creates a new Team record and indexes it in memory
-     *
-     * @param name   Name of the Team
-     * @param prefix Prefix of the Team
-     * @param owner  UUID of the Team Owner
-     * @param color  OPTIONAL, Color of the Team
-     */
-    public synchronized Team createTeam(String name, String prefix, UUID owner, @Nullable NamedTextColor color) throws SQLException {
-        if (byName.containsKey(name.toLowerCase(Locale.ROOT))) {
-            throw new SQLException("Team name already exists: " + name);
-        }
-        if (prefix.length() > 10) {
-            throw new SQLException("Prefix too long: " + prefix);
-        }
+    boolean isPlayerInTeam(UUID playerId, int teamId);
 
-        NamedTextColor finalColor = color == null ? NamedTextColor.WHITE : color;
+    boolean isPlayerInAnyTeam(UUID playerId);
 
-        Team created = db.createTeam(name, prefix, finalColor, owner);
-        index(created);
-        return created;
-    }
+    boolean isPlayerTeamOwner(UUID playerId, int teamId);
 
-    /**
-     * Deletes a Team record from the database and removes it from memory
-     */
-    public synchronized void deleteTeam(Team team) throws SQLException {
-        db.deleteTeam(team.getId());
-        deindex(team);
-    }
+    public void removePlayerFromTeam(int teamId, UUID playerId);
 
-    /**
-     * Changes the name of a Team record
-     */
-    public synchronized void renameTeam(Team team, String newName) throws SQLException {
-        if (byName.containsKey(newName.toLowerCase(Locale.ROOT))) {
-            throw new SQLException("Team name already exists: " + newName);
-        }
-        byName.remove(team.getName().toLowerCase(Locale.ROOT));
-        team.setName(newName);
-        db.updateTeam(team);
-        byName.put(newName.toLowerCase(Locale.ROOT), team);
-    }
-
-    /**
-     * Changes the prefix of a Team record
-     */
-    public synchronized void updatePrefix(Team team, String prefix) throws SQLException {
-        if (prefix.length() > 10) {
-            throw new SQLException("Prefix too long: " + prefix);
-        }
-
-        team.setPrefix(prefix);
-        db.updateTeam(team);
-    }
-
-    /**
-     * Changes the color of a Team record
-     */
-    public synchronized void updateColor(Team team, NamedTextColor color) throws SQLException {
-        team.setColor(color);
-        db.updateTeam(team);
-    }
-
-    /**
-     * Gets the Team of a player
-     */
-    public synchronized Optional<Team> getPlayerTeam(UUID player) {
-        Integer teamId = playerToTeam.get(player);
-        return teamId == null ? Optional.empty() : getById(teamId);
-    }
-
-    /**
-     * Adds a player to a Team
-     */
-    public synchronized void addTeamMember(Team team, UUID player, @Nullable TeamMemberRole role) throws SQLException {
-        if (team.getMembers().containsKey(player)) {
-            throw new SQLException("Player already in team: " + player);
-        }
-
-        TeamMemberRole finalRole = role == null ? TeamMemberRole.MEMBER : role;
-
-        db.addTeamMember(team.getId(), player, role);
-        team.getMembers().put(player, role);
-        playerToTeam.put(player, team.getId());
-    }
-
-    /**
-     * Removes a player from its Team
-     */
-    public synchronized void removeMember(UUID player) throws SQLException {
-        Team team = getPlayerTeam(player).orElseThrow(() -> new SQLException("Player not in a team: " + player));
-        db.removeTeamMembers(player);
-        team.getMembers().remove(player);
-        playerToTeam.remove(player);
-    }
-
-    /**
-     * Invites a player to a Team
-     */
-    public synchronized void invitePlayerToTeam(Team team, UUID player) throws SQLException {
-
-    }
+    public void invitePlayerToTeam(int teamId, UUID playerId);
+    public void acceptInvite(int teamId, UUID playerId);
+    public void declineInvite(int teamId, UUID playerId);
 }

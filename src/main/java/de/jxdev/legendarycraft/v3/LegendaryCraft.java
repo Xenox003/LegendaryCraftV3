@@ -2,21 +2,26 @@ package de.jxdev.legendarycraft.v3;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
-import de.jxdev.legendarycraft.v3.db.Database;
+import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
+import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
+import de.jxdev.legendarycraft.v3.data.db.IDatabaseService;
+import de.jxdev.legendarycraft.v3.data.db.SqliteDatabaseService;
+import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
+import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.events.PlayerChatListener;
 import de.jxdev.legendarycraft.v3.events.PlayerJoinLeaveListener;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
-import de.jxdev.legendarycraft.v3.service.ChestService;
-import de.jxdev.legendarycraft.v3.service.PlayerNameService;
-import de.jxdev.legendarycraft.v3.service.TeamService;
+import de.jxdev.legendarycraft.v3.service.*;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
+import org.bukkit.block.Chest;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
+import java.sql.SQLException;
 
 @Getter
 public final class LegendaryCraft extends JavaPlugin {
@@ -29,62 +34,80 @@ public final class LegendaryCraft extends JavaPlugin {
     @Getter
     private static LegendaryCraft instance;
 
-    private Database database;
+    private IDatabaseService database;
+
+    private TeamRepository teamRepository;
+    private LockedChestRepository lockedChestRepository;
+
+    private TeamCache teamCache;
+    private LockedChestCache lockedChestCache;
+
     private TeamService teamService;
     private ChestService chestService;
     private PlayerNameService playerNameService;
 
     @Override
     public void onEnable() {
-        // Ensure config exists \
-        saveDefaultConfig();
-
         try {
+            // Ensure config exists \
+            saveDefaultConfig();
+
             // Initialize Database using data folder + config value
             String dbFileName = getConfig().getString("database.file", "storage.db");
             Path dbPath = getDataFolder().toPath().resolve(dbFileName);
-            this.database = new Database(dbPath);
+            this.database = new SqliteDatabaseService(dbPath);
             this.database.init();
 
-            // Init TeamService \\
-            this.teamService = new TeamService(database);
-            this.teamService.loadAll();
+            // Init DB Repositories \\
+            this.teamRepository = new TeamRepository(database);
+            this.lockedChestRepository = new LockedChestRepository(database);
 
-            // Init ChestService \\
+            // Init Caches \\
+            this.teamCache = new TeamCache();
+            this.teamRepository.findAll().forEach(team -> teamCache.indexTeam(team));
+
+            this.lockedChestCache = new LockedChestCache();
+            this.lockedChestRepository.findAll().forEach(chest -> lockedChestCache.index(chest));
+
+            // Init Services \\
             int maxChestsPerTeamMember = getConfig().getInt("chest.max_per_team_member", 1);
-            this.chestService = new ChestService(database, maxChestsPerTeamMember);
-            this.chestService.loadAll();
 
-            // Init PlayerNameService \\
-            this.playerNameService = new PlayerNameService();
-        } catch (Exception e) {
-            getLogger().severe("Failed to initialize database/repository: " + e.getMessage());
-            // Disable plugin if critical
-            getServer().getPluginManager().disablePlugin(this);
-            return;
+            this.teamService = new TeamServiceImpl(teamRepository, teamCache);
+            this.chestService = new ChestServiceImpl(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
+
+            this.playerNameService = new PlayerNameServiceImpl();
+
+            // Init Translations \\
+            I18nManager.init();
+
+            // Register Commands \\
+            this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+                LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
+                commands.registrar().register(teamCommand);
+            });
+
+            // Player List Update Scheduler \\
+            Bukkit.getScheduler().runTaskTimer(this, PlayerListComponents::updateGlobalPlayerlist, 1L, 100L);
+
+            // Events \\
+            Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
+
+            getLogger().info("Plugin initialized.");
+        } catch (Exception ex) {
+            getLogger().severe("Failed to initialize plugin: " + ex);
+            Bukkit.getPluginManager().disablePlugin(this);
         }
-
-        // Init Translations \\
-        I18nManager.init();
-
-        // Register Commands \\
-        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
-            commands.registrar().register(teamCommand);
-        });
-
-        // Player List Update Scheduler \\
-        Bukkit.getScheduler().runTaskTimer(this, PlayerListComponents::updateGlobalPlayerlist, 1L, 100L);
-
-        // Events \\
-        Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
-
-        getLogger().info("Plugin initialized.");
     }
 
     @Override
     public void onDisable() {
+        try {
+            this.database.close();
+        } catch (SQLException ex) {
+            getLogger().severe("failed to disconnect from DB: " + ex.getMessage());
+        }
+
         getLogger().info("Plugin disabled.");
     }
 

@@ -4,16 +4,19 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
-import de.jxdev.legendarycraft.v3.models.Team;
-import de.jxdev.legendarycraft.v3.models.TeamMemberRole;
+import de.jxdev.legendarycraft.v3.data.models.team.Team;
+import de.jxdev.legendarycraft.v3.data.models.team.TeamCacheRecord;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 import java.util.Optional;
 
-public class TeamCommandUtil {
+public class TeamUtil {
     private static final LegendaryCraft plugin = LegendaryCraft.getInstance();
 
     private static final SimpleCommandExceptionType PLAYER_NOT_IN_TEAM = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
@@ -26,9 +29,16 @@ public class TeamCommandUtil {
     private static final DynamicCommandExceptionType PLAYER_ALREADY_IN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
             Component.translatable("team.error.no_member_required")
                     .append(Component.text("\n"))
-                    .append(Component.translatable("team.info.current_team", ((Team)team).getChatComponent()))
+                    .append(Component.translatable("team.info.current_team", ((TeamCacheRecord)team).getChatComponent()))
                     .color(NamedTextColor.RED)
     ));
+
+    public static Component getChatComponent(String name, NamedTextColor color) {
+        Style style = Style.style(color, TextDecoration.UNDERLINED);
+        return Component.text(name, style)
+                .clickEvent(ClickEvent.runCommand("/team info " + name))
+                .hoverEvent(Component.translatable("team.info.show_more"));
+    }
 
     /**
      * Gets the current player's team
@@ -36,7 +46,21 @@ public class TeamCommandUtil {
      * @throws CommandSyntaxException when the player is not in a team
      */
     public static Team getCurrentPlayerTeam(Player player) throws CommandSyntaxException {
-        Optional<Team> team = plugin.getTeamService().getPlayerTeam(player.getUniqueId());
+        Optional<Team> team = plugin.getTeamService().getTeamByPlayer(player.getUniqueId());
+        if (team.isEmpty()) {
+            throw PLAYER_NOT_IN_TEAM.create();
+        }
+
+        return team.get();
+    }
+
+    /**
+     * Get the current player's team from cache
+     * @return the current player's TeamCacheRecord
+     * @throws CommandSyntaxException when the player is not in a team
+     */
+    public static TeamCacheRecord getCurrentPlayerTeamFromCache(Player player) throws CommandSyntaxException {
+        Optional<TeamCacheRecord> team = plugin.getTeamService().getCachedTeamByPlayer(player.getUniqueId());
         if (team.isEmpty()) {
             throw PLAYER_NOT_IN_TEAM.create();
         }
@@ -49,7 +73,7 @@ public class TeamCommandUtil {
      * @throws CommandSyntaxException when the player already has a team
      */
     public static void checkIfPlayerHasNoTeam(Player player) throws CommandSyntaxException {
-        Optional<Team> team = plugin.getTeamService().getPlayerTeam(player.getUniqueId());
+        Optional<TeamCacheRecord> team = plugin.getTeamService().getCachedTeamByPlayer(player.getUniqueId());
         if (team.isPresent()) {
             throw PLAYER_ALREADY_IN_TEAM.create(team.get());
         }
@@ -60,8 +84,7 @@ public class TeamCommandUtil {
      * @throws CommandSyntaxException when the player doesn't own the team
      */
     public static void checkPlayerOwnsTeam(Player player, Team team) throws CommandSyntaxException {
-        TeamMemberRole role = team.getMembers().get(player.getUniqueId());
-        if (role != TeamMemberRole.OWNER) {
+        if (!plugin.getTeamService().isPlayerTeamOwner(player.getUniqueId(), team.getId())) {
             throw PLAYER_DOESNT_OWN_TEAM.create(team);
         }
     }

@@ -1,120 +1,18 @@
 package de.jxdev.legendarycraft.v3.service;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+public interface PlayerNameService {
+    void cleanup(Player player);
 
-/**
- * Service that manages Player nicknames, prefixes and suffixes
- */
-public class PlayerNameService {
-    private final Map<UUID, Component> prefixes = new ConcurrentHashMap<>();
-    private final Map<UUID, Component> suffixes = new ConcurrentHashMap<>();
-    private final Map<UUID, String> lastTeamEntryName = new ConcurrentHashMap<>();
+    void setNickname(Player player, String nickname);
 
-    private Scoreboard mainBoard() {
-        return Bukkit.getScoreboardManager().getMainScoreboard();
-    }
+    void clearNickname(Player player);
 
-    public PlayerNameService() {
-    }
+    void setPrefix(Player player, Component prefix);
 
-    public void setNickname(Player player, String nickname) {
-        PlayerProfile currentProfile = player.getPlayerProfile();
-        PlayerProfile newProfile = Bukkit.createProfileExact(currentProfile.getId(), nickname);
-        player.setPlayerProfile(newProfile);
+    void setSuffix(Player player, Component suffix);
 
-        applyTeam(player);
-        applyDisplayAndTab(player);
-    }
-
-    public void clearNickname(Player player) {
-        PlayerProfile profile = player.getPlayerProfile();
-        PlayerProfile newProfile = Bukkit.createProfileExact(profile.getId(), player.getName());
-        player.setPlayerProfile(profile);
-
-        applyTeam(player);
-        applyDisplayAndTab(player);
-    }
-
-    public void setPrefix(Player player, Component prefix) {
-        prefixes.put(player.getUniqueId(), prefix);
-
-        applyTeam(player);
-        applyDisplayAndTab(player);
-    }
-
-    public void setSuffix(Player player, Component suffix) {
-        suffixes.put(player.getUniqueId(), suffix);
-
-        applyTeam(player);
-        applyDisplayAndTab(player);
-    }
-
-    public void refreshEverywhere(Player player) {
-        updateTeamEntry(player);
-        applyTeam(player);
-        applyDisplayAndTab(player);
-    }
-
-    private String scoreboardTeamNameFor(Player player) {
-        return "pns_" + player.getUniqueId().toString().replace("-", "").substring(0, 16);
-    }
-
-    private Team getOrCreateScoreboardTeam(Player player) {
-        Scoreboard board = mainBoard();
-        String name = scoreboardTeamNameFor(player);
-        Team t = board.getTeam(name);
-        if (t == null) {
-            t = board.registerNewTeam(name);
-        }
-        return t;
-    }
-
-    private void applyTeam(Player p) {
-        Team t = getOrCreateScoreboardTeam(p);
-
-        Component prefix = prefixes.getOrDefault(p.getUniqueId(), Component.empty());
-        Component suffix = suffixes.getOrDefault(p.getUniqueId(), Component.empty());
-
-        t.prefix(prefix);
-        t.suffix(suffix);
-
-        updateTeamEntry(p);
-    }
-
-    private void updateTeamEntry(Player p) {
-        Team team = getOrCreateScoreboardTeam(p);
-        String currentEntry = p.getName();
-        String lastEntry = lastTeamEntryName.get(p.getUniqueId());
-
-        if (lastEntry != null && !lastEntry.equals(currentEntry)) {
-            team.removeEntry(lastEntry);
-        }
-        if (!team.hasEntry(currentEntry)) {
-            team.addEntry(currentEntry);
-        }
-        lastTeamEntryName.put(p.getUniqueId(), currentEntry);
-    }
-
-    private void applyDisplayAndTab(Player p) {
-        Component prefix = prefixes.getOrDefault(p.getUniqueId(), Component.empty());
-        Component suffix = suffixes.getOrDefault(p.getUniqueId(), Component.empty());
-
-        Component baseName = Component.text(p.getName());
-        Component composite = Component.empty()
-                .append(prefix)
-                .append(baseName)
-                .append(suffix);
-
-        p.displayName(composite);
-        p.playerListName(composite);
-    }
+    void refreshEverywhere(Player player);
 }

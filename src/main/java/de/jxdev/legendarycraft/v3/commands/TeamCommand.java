@@ -4,18 +4,14 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.TeamArgument;
-import de.jxdev.legendarycraft.v3.models.Team;
-import de.jxdev.legendarycraft.v3.models.TeamMemberRole;
+import de.jxdev.legendarycraft.v3.data.models.team.*;
 import de.jxdev.legendarycraft.v3.util.CommandUtil;
-import de.jxdev.legendarycraft.v3.util.TeamCommandUtil;
+import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -27,10 +23,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 public class TeamCommand {
 
@@ -41,7 +34,7 @@ public class TeamCommand {
 
                 /* ---------- PUBLIC COMMANDS ---------- */
                 .then(Commands.literal("info")
-                        .then(Commands.argument("team", new TeamArgument(plugin.getTeamService()))
+                        .then(Commands.argument("team", new TeamArgument())
                                 .executes(this::teamInfoExecutor)
                         )
                 )
@@ -94,7 +87,7 @@ public class TeamCommand {
                 )
                 .then(Commands.literal("join")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
-                        .then(Commands.argument("team", new TeamArgument(plugin.getTeamService()))
+                        .then(Commands.argument("team", new TeamArgument())
                                 .executes(this::teamJoinExecutor)
                         )
                 )
@@ -125,12 +118,13 @@ public class TeamCommand {
 
     private int teamInfoExecutor(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
-        Team team = context.getArgument("team", Team.class);
+        TeamCacheRecord team = context.getArgument("team", TeamCacheRecord.class);
+
+        List<TeamMember> memberList = plugin.getTeamService().getMemberList(team.getId());
 
         Component response = Component.translatable("team.info.members", team.getChatComponent());
-
-        for (UUID memberId : team.getMembers().keySet()) {
-            OfflinePlayer player = Bukkit.getOfflinePlayer(memberId);
+        for (TeamMember member : memberList) {
+            OfflinePlayer player = Bukkit.getOfflinePlayer(member.getPlayerId());
             String playerName = (player.getName() != null)
                     ? player.getName()
                     : player.getUniqueId().toString();
@@ -144,13 +138,13 @@ public class TeamCommand {
 
     private int teamListExecutor(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
-        List<Team> teams = plugin.getTeamService().getAll();
+        List<TeamWithMemberCount> teams = plugin.getTeamService().getAllWithMemberCount();
 
         Component response = Component.translatable("team.info.list");
 
-        for (Team team : teams) {
+        for (TeamWithMemberCount team : teams) {
             response = response.append(Component.newline())
-                    .append(Component.translatable("team.info.list_item", team.getChatComponent(), Component.text(team.getMembers().size())));
+                    .append(Component.translatable("team.info.list_item", team.getChatComponent(), Component.text(team.getMemberCount())));
         }
 
         sender.sendMessage(response);
@@ -162,52 +156,34 @@ public class TeamCommand {
         String name = StringArgumentType.getString(context, "name");
         String prefix = StringArgumentType.getString(context, "prefix");
 
-        TeamCommandUtil.checkIfPlayerHasNoTeam(sender);
+        TeamUtil.checkIfPlayerHasNoTeam(sender);
 
-        NamedTextColor color = null;
+        NamedTextColor color = NamedTextColor.WHITE;
         try {
             color = context.getArgument("color", NamedTextColor.class);
         } catch (IllegalArgumentException e) {
             // Ignored, color is optional
         }
 
-        try {
-            Team team = plugin.getTeamService().createTeam(name, prefix, sender.getUniqueId(), color);
+        Team team = plugin.getTeamService().createTeam(name, prefix, color, sender.getUniqueId());
 
-            Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
-            sender.sendMessage(response);
-            return Command.SINGLE_SUCCESS;
-        } catch (SQLException e) {
-            Component errorResponse = Component.translatable("common.error.internal_error", NamedTextColor.RED);
-            sender.sendMessage(errorResponse);
-
-            plugin.getLogger().severe("Failed to create team: " + e.getMessage());
-
-            return 0;
-        }
+        Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
+        sender.sendMessage(response);
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamDeleteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
-        Team team = TeamCommandUtil.getCurrentPlayerTeam(sender);
-        TeamCommandUtil.checkPlayerOwnsTeam(sender, team);
+        Team team = TeamUtil.getCurrentPlayerTeam(sender);
+        TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        try {
-            this.plugin.getTeamService().deleteTeam(team);
+        this.plugin.getTeamService().deleteTeam(team.getId());
 
-            sender.sendMessage(Component.translatable("team.success.delete", team.getChatComponent())
-                    .color(NamedTextColor.GREEN)
-            );
+        sender.sendMessage(Component.translatable("team.success.delete", team.getChatComponent())
+                .color(NamedTextColor.GREEN)
+        );
 
-            return Command.SINGLE_SUCCESS;
-        } catch (SQLException e) {
-            Component errorResponse = Component.translatable("common.error.internal_error", NamedTextColor.RED);
-            sender.sendMessage(errorResponse);
-
-            plugin.getLogger().severe("Failed to delete team: " + e.getMessage());
-
-            return 0;
-        }
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamSettingsNameExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

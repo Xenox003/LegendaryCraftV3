@@ -1,14 +1,12 @@
-package de.jxdev.legendarycraft.v3.models;
+package de.jxdev.legendarycraft.v3.data.models.team;
 
+import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import lombok.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-
-import java.time.Instant;
-import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -18,16 +16,9 @@ public class Team {
     private String name;
     private String prefix;
     private NamedTextColor color;
-    private Map<UUID, TeamMemberRole> members = new HashMap<>();
-    private Set<UUID> invited = new HashSet<>();
-    private Instant createdAt;
-    private Instant updatedAt;
 
     public Component getChatComponent() {
-        Style style = Style.style(this.color, TextDecoration.UNDERLINED);
-        return Component.text(this.name,style)
-                .clickEvent(ClickEvent.runCommand("/team info " + this.name))
-                .hoverEvent(Component.translatable("team.info.show_more"));
+        return TeamUtil.getChatComponent(this.name, this.color);
     }
 
     public Component getPrefixComponent() {

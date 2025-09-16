@@ -1,4 +1,4 @@
-package de.jxdev.legendarycraft.v3.models;
+package de.jxdev.legendarycraft.v3.data.models;
 
 import java.util.UUID;
 

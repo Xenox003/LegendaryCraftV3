@@ -1,9 +1,8 @@
-package de.jxdev.legendarycraft.v3.models;
+package de.jxdev.legendarycraft.v3.data.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bukkit.Location;
 
 @Data
 @AllArgsConstructor
