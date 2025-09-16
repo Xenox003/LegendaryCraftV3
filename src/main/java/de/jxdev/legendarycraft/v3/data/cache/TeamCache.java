@@ -40,6 +40,11 @@ public class TeamCache {
         teamsByName.put(team.getName(), TeamCacheRecord.fromTeam(team));
     }
 
+    public void updateNameIndex(TeamCacheRecord record) {
+        teamsByName.entrySet().removeIf(e -> e.getValue().getId() == record.getId());
+        teamsByName.put(record.getName(), record);
+    }
+
     /**
      * Removes a teamCacheRecord from the cache
      * @param teamId teamId to deindex

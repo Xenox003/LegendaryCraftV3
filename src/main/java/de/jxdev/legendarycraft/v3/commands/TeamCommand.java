@@ -1,9 +1,11 @@
 package de.jxdev.legendarycraft.v3.commands;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.Message;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.TeamArgument;
@@ -12,6 +14,7 @@ import de.jxdev.legendarycraft.v3.util.CommandUtil;
 import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -28,6 +31,13 @@ import java.util.UUID;
 public class TeamCommand {
 
     private final LegendaryCraft plugin = LegendaryCraft.getInstance();
+
+    private final SimpleCommandExceptionType PREFIX_TOO_LONG = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
+            Component.translatable("team.error.prefix_too_long", NamedTextColor.RED)
+    ));
+    private final SimpleCommandExceptionType NAME_ALREADY_USED = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
+            Component.translatable("team.error.name_already_used", NamedTextColor.RED)
+    ));
 
     public LiteralCommandNode<CommandSourceStack> getCommand() {
         return Commands.literal("team")
@@ -62,13 +72,18 @@ public class TeamCommand {
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                         .then(Commands.literal("name")
                                 .then(Commands.argument("name", StringArgumentType.string())
+                                        .executes(this::teamSettingsNameExecutor)
                                 )
                         )
                         .then(Commands.literal("color")
-                                .then(Commands.argument("color", ArgumentTypes.namedColor()))
+                                .then(Commands.argument("color", ArgumentTypes.namedColor())
+                                        .executes(this::teamSettingsColorExecutor)
+                                )
                         )
                         .then(Commands.literal("prefix")
-                                .then(Commands.argument("prefix", StringArgumentType.string()))
+                                .then(Commands.argument("prefix", StringArgumentType.string())
+                                        .executes(this::teamSettingsPrefixExecutor)
+                                )
                         )
                 )
                 .then(Commands.literal("kick")
@@ -156,7 +171,14 @@ public class TeamCommand {
         String name = StringArgumentType.getString(context, "name");
         String prefix = StringArgumentType.getString(context, "prefix");
 
+        // Validate Prefix \\
+        if (prefix.length() > 10) throw PREFIX_TOO_LONG.create();
+
+        // Validate Team Membership \\
         TeamUtil.checkIfPlayerHasNoTeam(sender);
+
+        // Validate Team Name \\
+        if (plugin.getTeamService().getTeam(name).isPresent()) throw NAME_ALREADY_USED.create();
 
         NamedTextColor color = NamedTextColor.WHITE;
         try {
@@ -174,7 +196,7 @@ public class TeamCommand {
 
     private int teamDeleteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
-        Team team = TeamUtil.getCurrentPlayerTeam(sender);
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
         this.plugin.getTeamService().deleteTeam(team.getId());
@@ -188,20 +210,59 @@ public class TeamCommand {
 
     private int teamSettingsNameExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        String name = StringArgumentType.getString(context, "name");
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        throw new NotImplementedException();
+        // Validate Permissions \\
+        TeamUtil.checkPlayerOwnsTeam(sender, team);
+
+        // Validate Team Name \\
+        if (plugin.getTeamService().getTeam(name).isPresent()) throw NAME_ALREADY_USED.create();
+
+        // Change Name \\
+        plugin.getTeamService().setTeamName(team.getId(), name);
+
+        sender.sendMessage(Component.translatable("team.success.settings.name", Component.text(name))
+                .color(NamedTextColor.GREEN)
+        );
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamSettingsColorExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        NamedTextColor color = context.getArgument("color", NamedTextColor.class);
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        throw new NotImplementedException();
+        // Validate Permissions \\
+        TeamUtil.checkPlayerOwnsTeam(sender, team);
+
+        // Change Color \\
+        plugin.getTeamService().setTeamColor(team.getId(), color);
+
+        sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(color.toString()))
+                .color(NamedTextColor.GREEN)
+        );
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamSettingsPrefixExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        String prefix = StringArgumentType.getString(context, "prefix");
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        throw new NotImplementedException();
+        // Validate Permissions \\
+        TeamUtil.checkPlayerOwnsTeam(sender, team);
+
+        // Validate Prefix \\
+        if (prefix.length() > 10) throw PREFIX_TOO_LONG.create();
+
+        // Change Prefix \\
+        plugin.getTeamService().setTeamPrefix(team.getId(), prefix);
+
+        sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(prefix))
+                .color(NamedTextColor.GREEN)
+        );
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamKickExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

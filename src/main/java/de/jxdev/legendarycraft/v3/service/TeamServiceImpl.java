@@ -70,6 +70,8 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator) {
+        if (prefix.length() > 10) throw new IllegalArgumentException("Prefix must be at most 10 characters long");
+
         try {
             // Create in DB \\
             final int teamId = repo.createTeam(teamName, prefix, color, creator);
@@ -162,6 +164,7 @@ public class TeamServiceImpl implements TeamService {
             // Update Cache \\
             Optional<TeamCacheRecord> team = cache.getTeam(teamId);
             team.ifPresent(teamCacheRecord -> teamCacheRecord.setName(teamName));
+            team.ifPresent(cache::updateNameIndex);
 
             // No need to update player prefixes cause they do not require team name \\
         } catch (SQLException ex) {

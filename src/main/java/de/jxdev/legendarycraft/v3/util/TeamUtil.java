@@ -23,7 +23,7 @@ public class TeamUtil {
             Component.translatable("team.error.member_required", NamedTextColor.RED)
     ));
     private static final DynamicCommandExceptionType PLAYER_DOESNT_OWN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
-            Component.translatable("team.error.no_owner", ((Team)team).getChatComponent())
+            Component.translatable("team.error.no_owner", ((TeamCacheRecord)team).getChatComponent())
                     .color(NamedTextColor.RED)
     ));
     private static final DynamicCommandExceptionType PLAYER_ALREADY_IN_TEAM = new DynamicCommandExceptionType(team -> MessageComponentSerializer.message().serialize(
@@ -83,7 +83,7 @@ public class TeamUtil {
      * Checks if the given player owns the given team.
      * @throws CommandSyntaxException when the player doesn't own the team
      */
-    public static void checkPlayerOwnsTeam(Player player, Team team) throws CommandSyntaxException {
+    public static void checkPlayerOwnsTeam(Player player, TeamCacheRecord team) throws CommandSyntaxException {
         if (!plugin.getTeamService().isPlayerTeamOwner(player.getUniqueId(), team.getId())) {
             throw PLAYER_DOESNT_OWN_TEAM.create(team);
         }
