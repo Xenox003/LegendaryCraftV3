@@ -173,7 +173,7 @@ public class TeamCommand {
         //String prefix = StringArgumentType.getString(context, "prefix");
 
         // Validate Prefix \\
-        if (name.length() > 10) throw NAME_TOO_LONG.create();
+        if (name.length() > 15) throw NAME_TOO_LONG.create();
 
         // Validate Team Membership \\
         TeamUtil.checkIfPlayerHasNoTeam(sender);
@@ -219,6 +219,7 @@ public class TeamCommand {
 
         // Validate Team Name \\
         if (plugin.getTeamService().getTeam(name).isPresent()) throw NAME_ALREADY_USED.create();
+        if (name.length() > 15) throw NAME_TOO_LONG.create();
 
         // Change Name \\
         plugin.getTeamService().setTeamName(team.getId(), name);
@@ -255,7 +256,7 @@ public class TeamCommand {
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
         // Validate Prefix \\
-        if (prefix.length() > 10) throw PREFIX_TOO_LONG.create();
+        if (prefix.length() > 15) throw PREFIX_TOO_LONG.create();
 
         // Change Prefix \\
         plugin.getTeamService().setTeamPrefix(team.getId(), prefix);
