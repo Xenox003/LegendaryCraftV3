@@ -26,6 +26,6 @@ public class Team {
         return Component.empty()
                 .append(Component.text("[", NamedTextColor.DARK_GRAY))
                 .append(Component.text(this.prefix, style))
-                .append(Component.text("]", NamedTextColor.DARK_GRAY));
+                .append(Component.text("] ", NamedTextColor.DARK_GRAY));
     }
 }

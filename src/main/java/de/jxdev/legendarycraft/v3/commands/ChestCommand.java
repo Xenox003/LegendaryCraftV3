@@ -123,7 +123,7 @@ public class ChestCommand {
         TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(player);
         List<LockedChest> chestList = plugin.getChestService().getAllByTeam(team.getId());
 
-        Component response = Component.translatable("chest.info.list");
+        Component response = Component.translatable("chest.info.list", team.getChatComponent());
         for (LockedChest chest : chestList) {
             response = response.append(
                     Component.newline()

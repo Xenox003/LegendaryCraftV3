@@ -4,7 +4,9 @@ import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
 import de.jxdev.legendarycraft.v3.data.models.team.*;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.exception.ServiceException;
+import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -77,7 +79,10 @@ public class TeamServiceImpl implements TeamService {
 
             // Create in cache \\
             cache.indexTeam(team);
+            cache.indexPlayer(creator, teamId);
 
+            // Update Player prefixes etc \\
+            TeamUtil.updateAllPlayerTags(team);
             return team;
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
@@ -87,6 +92,8 @@ public class TeamServiceImpl implements TeamService {
     @Override
     public void deleteTeam(int teamId) {
         try {
+            TeamUtil.removeAllMemberTags(teamId);
+
             repo.deleteTeam(teamId);
             cache.deIndexTeam(teamId);
         } catch (SQLException ex) {
@@ -120,7 +127,9 @@ public class TeamServiceImpl implements TeamService {
             repo.updatePrefix(teamId, prefix);
             // Prefix is not cached so we do not need to update the cache \\
 
-            // TODO: Update all player prefixes etc. \\
+            // Update Player prefixes etc \\
+            Team team = repo.findById(teamId).orElseThrow(() -> new IllegalStateException("Team not found"));
+            TeamUtil.updateAllPlayerTags(team);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -133,10 +142,12 @@ public class TeamServiceImpl implements TeamService {
             repo.updateColor(teamId, color);
 
             // Update Cache \\
-            Optional<TeamCacheRecord> team = cache.getTeam(teamId);
-            team.ifPresent(teamCacheRecord -> teamCacheRecord.setColor(color));
+            Optional<TeamCacheRecord> cachedTeam = cache.getTeam(teamId);
+            cachedTeam.ifPresent(teamCacheRecord -> teamCacheRecord.setColor(color));
 
-            // TODO: Update all player prefixes etc. \\
+            // Update Player prefixes etc \\
+            Team team = repo.findById(teamId).orElseThrow(() -> new IllegalStateException("Team not found"));
+            TeamUtil.updateAllPlayerTags(team);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }

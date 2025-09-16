@@ -77,14 +77,15 @@ public class TeamRepository {
             statement.setString(1, name);
             statement.setString(2, prefix);
             statement.setInt(3, color.value());
-            int teamId = statement.executeUpdate();
+            statement.execute();
+            int teamId = statement.getGeneratedKeys().getInt(1);
 
             // Insert creator as OWNER \\
             PreparedStatement teamMemberStatement = conn.prepareStatement("INSERT INTO team_members(team_id,player_id,role) VALUES(?,?,?)", PreparedStatement.RETURN_GENERATED_KEYS);
-            statement.setInt(1, teamId);
-            statement.setString(2, creator.toString());
-            statement.setString(3, TeamMemberRole.OWNER.name());
-            statement.execute();
+            teamMemberStatement.setInt(1, teamId);
+            teamMemberStatement.setString(2, creator.toString());
+            teamMemberStatement.setString(3, TeamMemberRole.OWNER.name());
+            teamMemberStatement.execute();
 
             return teamId;
         });

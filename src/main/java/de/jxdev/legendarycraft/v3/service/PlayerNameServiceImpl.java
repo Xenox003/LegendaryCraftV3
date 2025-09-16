@@ -68,8 +68,24 @@ public class PlayerNameServiceImpl implements PlayerNameService {
     }
 
     @Override
+    public void clearPrefix(Player player) {
+        prefixes.remove(player.getUniqueId());
+
+        applyTeam(player);
+        applyDisplayAndTab(player);
+    }
+
+    @Override
     public void setSuffix(Player player, Component suffix) {
         suffixes.put(player.getUniqueId(), suffix);
+
+        applyTeam(player);
+        applyDisplayAndTab(player);
+    }
+
+    @Override
+    public void clearSuffix(Player player) {
+        suffixes.remove(player.getUniqueId());
 
         applyTeam(player);
         applyDisplayAndTab(player);

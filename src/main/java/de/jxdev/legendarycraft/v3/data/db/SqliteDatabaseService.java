@@ -21,7 +21,11 @@ public class SqliteDatabaseService implements IDatabaseService {
      * @throws SQLException
      */
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url);
+        Connection c = DriverManager.getConnection(url);
+        try (Statement st = c.createStatement()) {
+            st.execute("PRAGMA foreign_keys=ON");
+        }
+        return c;
     }
 
     /**
@@ -51,7 +55,7 @@ public class SqliteDatabaseService implements IDatabaseService {
                     name        TEXT NOT NULL UNIQUE,
                     prefix      TEXT NOT NULL,
                     color       INT NOT NULL,
-                    created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """);
@@ -70,8 +74,8 @@ public class SqliteDatabaseService implements IDatabaseService {
                     player_id   TEXT PRIMARY KEY NOT NULL,
                     team_id     INTEGER NOT NULL,
                     role        TEXT NOT NULL DEFAULT 'MEMBER',
-                    memberSince TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    FOREIGN KEY(teamId) REFERENCES teams(id) ON DELETE CASCADE
+                    memberSince TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
 
@@ -83,6 +87,7 @@ public class SqliteDatabaseService implements IDatabaseService {
                     expires     TIMESTAMP NOT NULL,
                     created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+                )
             """);
 
             // Table for Locked Chests \\
@@ -95,7 +100,7 @@ public class SqliteDatabaseService implements IDatabaseService {
                     z           INTEGER NOT NULL,
                     created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (team_id, world_id, x, y, z),
-                    FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE
+                    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
         }

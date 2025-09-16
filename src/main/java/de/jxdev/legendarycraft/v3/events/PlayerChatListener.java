@@ -10,15 +10,10 @@ import org.bukkit.event.Listener;
 public class PlayerChatListener implements Listener {
     @EventHandler
     public void onAsyncChat(AsyncChatEvent event) {
-        event.renderer((source, sourceDisplayName, message, viewer) -> {
-            if (!(viewer instanceof Player)) return message;
-
-            return Component.empty()
-                    .append(sourceDisplayName.color(NamedTextColor.WHITE))
-                    .append(Component.text(" » "))
-                    .append(message)
-                    .color(NamedTextColor.GRAY);
-
-        });
+        event.renderer((source, sourceDisplayName, message, viewer) -> Component.empty()
+                .append(sourceDisplayName.color(NamedTextColor.WHITE))
+                .append(Component.text(" » "))
+                .append(message.color(NamedTextColor.WHITE))
+                .color(NamedTextColor.GRAY));
     }
 }

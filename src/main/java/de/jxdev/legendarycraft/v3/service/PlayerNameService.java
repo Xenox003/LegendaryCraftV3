@@ -12,7 +12,11 @@ public interface PlayerNameService {
 
     void setPrefix(Player player, Component prefix);
 
+    void clearPrefix(Player player);
+
     void setSuffix(Player player, Component suffix);
+
+    void clearSuffix(Player player);
 
     void refreshEverywhere(Player player);
 }

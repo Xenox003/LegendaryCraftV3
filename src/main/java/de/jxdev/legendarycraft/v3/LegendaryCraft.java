@@ -1,6 +1,7 @@
 package de.jxdev.legendarycraft.v3;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.jxdev.legendarycraft.v3.commands.ChestCommand;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
 import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
@@ -84,6 +85,9 @@ public final class LegendaryCraft extends JavaPlugin {
             this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
                 LiteralCommandNode<CommandSourceStack> teamCommand = new TeamCommand().getCommand();
                 commands.registrar().register(teamCommand);
+
+                LiteralCommandNode<CommandSourceStack> chestCommand = new ChestCommand().getCommand();
+                commands.registrar().register(chestCommand);
             });
 
             // Player List Update Scheduler \\
@@ -96,6 +100,7 @@ public final class LegendaryCraft extends JavaPlugin {
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {
             getLogger().severe("Failed to initialize plugin: " + ex);
+            ex.printStackTrace();
             Bukkit.getPluginManager().disablePlugin(this);
         }
     }

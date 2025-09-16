@@ -2,8 +2,7 @@ package de.jxdev.legendarycraft.v3.events;
 
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.data.models.team.Team;
-import de.jxdev.legendarycraft.v3.service.PlayerNameService;
-import de.jxdev.legendarycraft.v3.service.PlayerNameServiceImpl;
+import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.event.EventHandler;
@@ -27,8 +26,7 @@ public class PlayerJoinLeaveListener implements Listener {
         playerTeam.ifPresent(team -> plugin.getTeamCache().indexPlayer(playerId, team.getId()));
 
         // Set Name Prefix \\
-        PlayerNameService nameService = LegendaryCraft.getInstance().getPlayerNameService();
-        playerTeam.ifPresent(team -> nameService.setPrefix(event.getPlayer(), team.getPrefixComponent()));
+        playerTeam.ifPresent(team -> TeamUtil.updatePlayerTag(event.getPlayer(), team));
 
         // Set Join Message \\
         event.joinMessage(Component.translatable("common.message.player_join", event.getPlayer().displayName().color(NamedTextColor.WHITE)).color(NamedTextColor.GOLD));

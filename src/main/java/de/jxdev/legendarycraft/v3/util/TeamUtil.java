@@ -88,4 +88,38 @@ public class TeamUtil {
             throw PLAYER_DOESNT_OWN_TEAM.create(team);
         }
     }
+
+    public static void updatePlayerTag(Player player) {
+        Optional<Team> team = plugin.getTeamService().getTeamByPlayer(player.getUniqueId());
+        if (team.isEmpty()) {
+            removePlayerTag(player);
+        } else {
+            updatePlayerTag(player, team.get());
+        }
+    }
+    public static void removePlayerTag(Player player) {
+        plugin.getPlayerNameService().clearPrefix(player);
+    }
+    public static void updatePlayerTag(Player player, Team team) {
+        plugin.getPlayerNameService().setPrefix(player, team.getPrefixComponent());
+    }
+    public static void updateAllPlayerTags(Team team) {
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            Optional<TeamCacheRecord> playerTeam = plugin.getTeamService().getCachedTeamByPlayer(player.getUniqueId());
+            if (playerTeam.isEmpty()) {
+                removePlayerTag(player);
+                continue;
+            };
+            if (playerTeam.get().getId() != team.getId()) continue;
+            updatePlayerTag(player, team);
+        }
+    }
+    public static void removeAllMemberTags(int teamId) {
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            Optional<TeamCacheRecord> playerTeam = plugin.getTeamService().getCachedTeamByPlayer(player.getUniqueId());
+            if (playerTeam.isEmpty()) continue;
+            if (playerTeam.get().getId() != teamId) continue;
+            removePlayerTag(player);
+        }
+    }
 }

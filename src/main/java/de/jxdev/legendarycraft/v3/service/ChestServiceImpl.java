@@ -72,6 +72,6 @@ public class ChestServiceImpl implements ChestService {
 
     @Override
     public boolean checkChestLimit(int teamId) {
-        return getChestLimit(teamId) < getChestCount(teamId);
+        return getChestCount(teamId) < getChestLimit(teamId);
     }
 }
