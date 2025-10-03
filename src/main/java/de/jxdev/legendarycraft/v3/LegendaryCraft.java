@@ -27,7 +27,6 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.awt.*;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.EnumSet;
@@ -112,10 +111,10 @@ public final class LegendaryCraft extends JavaPlugin {
             eventDispatcher.registerListener(TeamCreatedEvent.class, tagUpdater.onTeamCreated());
 
 
-            this.teamService = new TeamServiceImpl(teamRepository, teamCache, eventDispatcher);
-            this.chestService = new ChestServiceImpl(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
+            this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
+            this.chestService = new ChestService(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
 
-            this.playerNameService = new PlayerNameServiceImpl();
+            this.playerNameService = new PlayerNameService();
 
             // Init Translations \
             I18nManager.init();
