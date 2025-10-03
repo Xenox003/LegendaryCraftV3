@@ -3,9 +3,10 @@ package de.jxdev.legendarycraft.v3.service;
 import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
 import de.jxdev.legendarycraft.v3.data.models.team.*;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
+import de.jxdev.legendarycraft.v3.event.EventDispatcher;
+import de.jxdev.legendarycraft.v3.event.team.*;
 import de.jxdev.legendarycraft.v3.exception.ServiceException;
 import de.jxdev.legendarycraft.v3.exception.team.*;
-import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -23,10 +24,12 @@ import java.util.UUID;
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository repo;
     private final TeamCache cache;
+    private final EventDispatcher eventDispatcher;
 
-    public TeamServiceImpl(TeamRepository repo, TeamCache cache) {
+    public TeamServiceImpl(TeamRepository repo, TeamCache cache, EventDispatcher eventDispatcher) {
         this.repo = repo;
         this.cache = cache;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @Override
@@ -92,8 +95,8 @@ public class TeamServiceImpl implements TeamService {
             cache.indexTeam(team);
             cache.indexPlayer(creator, teamId);
 
-            // Update Player prefixes etc \\
-            TeamUtil.updateAllPlayerTags(team);
+            // Dispatch event for team creation \
+            eventDispatcher.dispatchEvent(new TeamCreatedEvent(team));
             return team;
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
@@ -103,7 +106,8 @@ public class TeamServiceImpl implements TeamService {
     @Override
     public void deleteTeam(TeamCacheRecord team) {
         try {
-            TeamUtil.removeAllMemberTags(team.getId());
+            // Dispatch event to allow listeners to clean up player tags etc.
+            eventDispatcher.dispatchEvent(new TeamDeletedEvent(team.getId()));
 
             repo.deleteTeam(team.getId());
             cache.deIndexTeam(team.getId());
@@ -136,11 +140,11 @@ public class TeamServiceImpl implements TeamService {
 
         try {
             repo.updatePrefix(team.getId(), prefix);
-            // Prefix is not cached so we do not need to update the cache \\
+            // Prefix is not cached so we do not need to update the cache \
 
-            // Update Player prefixes etc \\
+            // Dispatch prefix changed event \
             Team dbTeam = repo.findById(team.getId()).orElseThrow(TeamNotFoundException::new);
-            TeamUtil.updateAllPlayerTags(dbTeam);
+            eventDispatcher.dispatchEvent(new TeamPrefixChangedEvent(dbTeam));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -156,9 +160,9 @@ public class TeamServiceImpl implements TeamService {
             Optional<TeamCacheRecord> cachedTeam = cache.getTeam(team.getId());
             cachedTeam.ifPresent(teamCacheRecord -> teamCacheRecord.setColor(color));
 
-            // Update Player prefixes etc \\
+            // Dispatch color changed event \
             Team dbTeam = repo.findById(team.getId()).orElseThrow(TeamNotFoundException::new);
-            TeamUtil.updateAllPlayerTags(dbTeam);
+            eventDispatcher.dispatchEvent(new TeamColorChangedEvent(dbTeam));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -178,7 +182,8 @@ public class TeamServiceImpl implements TeamService {
             dbTeam.ifPresent(teamCacheRecord -> teamCacheRecord.setName(teamName));
             dbTeam.ifPresent(cache::updateNameIndex);
 
-            // No need to update player prefixes cause they do not require team name \\
+            // Dispatch name changed event (no tag update needed currently) \
+            eventDispatcher.dispatchEvent(new TeamNameChangedEvent(team.getId(), teamName));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -195,11 +200,9 @@ public class TeamServiceImpl implements TeamService {
             repo.addMember(team.getId(), playerId, role);
             cache.indexPlayer(playerId, team.getId());
 
-            // Update Player prefixes etc \\
-            Player player = Bukkit.getPlayer(playerId);
-            if (player != null) {
-                TeamUtil.updatePlayerTag(player);
-            }
+            // Dispatch event with DB team instead of cache record \
+            Team dbTeam = cache.getDbTeam(team, repo).orElseThrow(() -> new ServiceException("Team not found"));
+            eventDispatcher.dispatchEvent(new PlayerAddedToTeamEvent(dbTeam, playerId));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -257,11 +260,9 @@ public class TeamServiceImpl implements TeamService {
             repo.removeMember(team.getId(), playerId);
             cache.deIndexPlayer(playerId);
 
-            // Update Player prefixes etc \\
-            Player player = Bukkit.getPlayer(playerId);
-            if (player != null) {
-                TeamUtil.removePlayerTag(player);
-            }
+            // Dispatch event with DB team instead of cache record \
+            Team dbTeam = cache.getDbTeam(team, repo).orElseThrow(() -> new ServiceException("Team not found"));
+            eventDispatcher.dispatchEvent(new PlayerRemovedFromTeamEvent(dbTeam, playerId));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -299,10 +300,9 @@ public class TeamServiceImpl implements TeamService {
             repo.acceptTeamInvite(team.getId(), playerId);
             cache.indexPlayer(playerId, team.getId());
 
-            Player player = Bukkit.getPlayer(playerId);
-            if (player != null) {
-                TeamUtil.updatePlayerTag(player);
-            }
+            // Treat accept as a player being added to the team
+            Team dbTeam = cache.getDbTeam(team, repo).orElseThrow(() -> new ServiceException("Team not found"));
+            eventDispatcher.dispatchEvent(new PlayerAddedToTeamEvent(dbTeam, playerId));
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }

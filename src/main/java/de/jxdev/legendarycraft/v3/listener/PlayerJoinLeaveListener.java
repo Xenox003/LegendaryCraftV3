@@ -1,4 +1,4 @@
-package de.jxdev.legendarycraft.v3.events;
+package de.jxdev.legendarycraft.v3.listener;
 
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.data.models.team.Team;

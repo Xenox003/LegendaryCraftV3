@@ -9,8 +9,11 @@ import de.jxdev.legendarycraft.v3.data.db.IDatabaseService;
 import de.jxdev.legendarycraft.v3.data.db.SqliteDatabaseService;
 import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
-import de.jxdev.legendarycraft.v3.events.PlayerChatListener;
-import de.jxdev.legendarycraft.v3.events.PlayerJoinLeaveListener;
+import de.jxdev.legendarycraft.v3.event.team.*;
+import de.jxdev.legendarycraft.v3.listener.PlayerChatListener;
+import de.jxdev.legendarycraft.v3.listener.PlayerJoinLeaveListener;
+import de.jxdev.legendarycraft.v3.event.EventDispatcher;
+import de.jxdev.legendarycraft.v3.event.listeners.TeamTagUpdater;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
 import de.jxdev.legendarycraft.v3.service.*;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -18,7 +21,6 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Chest;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -47,6 +49,8 @@ public final class LegendaryCraft extends JavaPlugin {
     private ChestService chestService;
     private PlayerNameService playerNameService;
 
+    private EventDispatcher eventDispatcher;
+
     @Override
     public void onEnable() {
         try {
@@ -70,15 +74,26 @@ public final class LegendaryCraft extends JavaPlugin {
             this.lockedChestCache = new LockedChestCache();
             this.lockedChestRepository.findAll().forEach(chest -> lockedChestCache.index(chest));
 
-            // Init Services \\
+            // Init Services \
             int maxChestsPerTeamMember = getConfig().getInt("chest.max_per_team_member", 1);
 
-            this.teamService = new TeamServiceImpl(teamRepository, teamCache);
+            // Init Event System \
+            this.eventDispatcher = new EventDispatcher();
+            TeamTagUpdater tagUpdater = new TeamTagUpdater();
+            eventDispatcher.registerListener(PlayerAddedToTeamEvent.class, tagUpdater.onPlayerAdded());
+            eventDispatcher.registerListener(PlayerRemovedFromTeamEvent.class, tagUpdater.onPlayerRemoved());
+            eventDispatcher.registerListener(TeamColorChangedEvent.class, tagUpdater.onTeamColorChanged());
+            eventDispatcher.registerListener(TeamPrefixChangedEvent.class, tagUpdater.onTeamPrefixChanged());
+            eventDispatcher.registerListener(TeamDeletedEvent.class, tagUpdater.onTeamDeleted());
+            eventDispatcher.registerListener(TeamCreatedEvent.class, tagUpdater.onTeamCreated());
+
+
+            this.teamService = new TeamServiceImpl(teamRepository, teamCache, eventDispatcher);
             this.chestService = new ChestServiceImpl(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
 
             this.playerNameService = new PlayerNameServiceImpl();
 
-            // Init Translations \\
+            // Init Translations \
             I18nManager.init();
 
             // Register Commands \\

@@ -2,7 +2,9 @@ package de.jxdev.legendarycraft.v3.data.cache;
 
 import de.jxdev.legendarycraft.v3.data.models.team.TeamCacheRecord;
 import de.jxdev.legendarycraft.v3.data.models.team.Team;
+import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -73,6 +75,16 @@ public class TeamCache {
 
     public Optional<TeamCacheRecord> getTeamByPlayer(UUID playerId) {
         return getTeamId(playerId).flatMap(this::getTeam);
+    }
+
+    // --- DB resolving helpers ---
+    /**
+     * Ensure a DB Team for a cached record by fetching it via the repository.
+     */
+    public Optional<Team> getDbTeam(TeamCacheRecord record, TeamRepository repo) throws SQLException {
+        if (record == null) return Optional.empty();
+        if (record instanceof Team) return Optional.of((Team) record);
+        return repo.findById(record.getId());
     }
 
 }
