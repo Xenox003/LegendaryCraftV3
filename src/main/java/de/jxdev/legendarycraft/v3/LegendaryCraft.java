@@ -10,6 +10,8 @@ import de.jxdev.legendarycraft.v3.data.db.SqliteDatabaseService;
 import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.event.team.*;
+import de.jxdev.legendarycraft.v3.listener.ColoredAnvilListener;
+import de.jxdev.legendarycraft.v3.listener.ColoredSignListener;
 import de.jxdev.legendarycraft.v3.listener.PlayerChatListener;
 import de.jxdev.legendarycraft.v3.listener.PlayerJoinLeaveListener;
 import de.jxdev.legendarycraft.v3.event.EventDispatcher;
@@ -23,6 +25,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.awt.*;
 import java.nio.file.Path;
 import java.sql.SQLException;
 
@@ -111,6 +114,8 @@ public final class LegendaryCraft extends JavaPlugin {
             // Events \\
             Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
             Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
+            Bukkit.getPluginManager().registerEvents(new ColoredAnvilListener(), this);
+            Bukkit.getPluginManager().registerEvents(new ColoredSignListener(), this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {
