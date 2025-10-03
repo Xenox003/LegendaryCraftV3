@@ -8,3 +8,7 @@ database:
 
 chest:
   max_per_team_member: 2
+
+discord:
+  access_token: ""
+  guild_id: ""

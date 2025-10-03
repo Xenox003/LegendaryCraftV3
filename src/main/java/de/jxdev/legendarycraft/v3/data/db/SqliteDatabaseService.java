@@ -122,6 +122,15 @@ public class SqliteDatabaseService implements IDatabaseService {
                     player_id   TEXT NOT NULL
                 )
             """);
+
+            // Table for Discord Team Roles Mapping \\
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS discord_team_roles(
+                    team_id     INTEGER PRIMARY KEY,
+                    role_id     TEXT NOT NULL,
+                    FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+                )
+            """);
         }
     }
 

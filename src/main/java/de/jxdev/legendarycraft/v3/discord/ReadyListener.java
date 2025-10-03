@@ -24,6 +24,8 @@ public class ReadyListener extends ListenerAdapter {
         Bukkit.getScheduler().runTask(LegendaryCraft.getInstance(), () -> {
             plugin.getLogger().info("JDA is connected as " + event.getJDA().getSelfUser().getAsTag());
             discordService.updateDiscordPresence();
+            // Initial sync of team roles
+            LegendaryCraft.getInstance().getDiscordTeamRoleSyncService().initialSyncAllTeams();
         });
 
         // Init Commands \\

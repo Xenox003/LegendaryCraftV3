@@ -283,6 +283,12 @@ public class TeamCommand {
         final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
         final var playerProfile = targetProfiles.iterator().next();
 
+        var isOwner = plugin.getTeamService().isPlayerTeamOwner(playerProfile.getId(), team);
+        if (isOwner) {
+            sender.sendMessage(Component.translatable("team.error.cannot_kick_owner").color(NamedTextColor.RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
         try {
             plugin.getTeamService().removePlayerFromTeam(team, playerProfile.getId());
 

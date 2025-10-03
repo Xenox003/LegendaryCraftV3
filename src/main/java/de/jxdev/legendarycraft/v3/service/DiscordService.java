@@ -26,6 +26,13 @@ public class DiscordService {
     @Getter
     private JDA jda;
 
+    public net.dv8tion.jda.api.entities.Guild getGuild() {
+        if (jda == null) return null;
+        String guildId = plugin.getConfig().getString("discord.guild_id");
+        if (guildId == null || guildId.isBlank()) return null;
+        return jda.getGuildById(guildId);
+    }
+
     public DiscordService(LegendaryCraft plugin) {
         this.plugin = plugin;
 
@@ -36,7 +43,8 @@ public class DiscordService {
             try {
                 EnumSet<GatewayIntent> intents = EnumSet.of(
                         GatewayIntent.GUILD_MESSAGES,
-                        GatewayIntent.GUILD_MESSAGE_REACTIONS
+                        GatewayIntent.GUILD_MESSAGE_REACTIONS,
+                        GatewayIntent.GUILD_MEMBERS
                 );
 
                 this.jda = JDABuilder.createDefault(plugin.getConfig().getString("discord.access_token"), intents)

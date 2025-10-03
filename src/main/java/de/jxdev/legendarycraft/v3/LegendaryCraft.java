@@ -11,6 +11,8 @@ import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordLinkCodeRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordUserRepository;
+import de.jxdev.legendarycraft.v3.data.repository.DiscordTeamRoleRepository;
+import de.jxdev.legendarycraft.v3.discord.DiscordTeamRoleSyncService;
 import de.jxdev.legendarycraft.v3.discord.ReadyListener;
 import de.jxdev.legendarycraft.v3.event.team.*;
 import de.jxdev.legendarycraft.v3.listener.*;
@@ -53,6 +55,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private LockedChestRepository lockedChestRepository;
     private DiscordLinkCodeRepository discordLinkCodeRepository;
     private DiscordUserRepository discordUserRepository;
+    private DiscordTeamRoleRepository discordTeamRoleRepository;
 
     private TeamCache teamCache;
     private LockedChestCache lockedChestCache;
@@ -62,6 +65,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private PlayerNameService playerNameService;
     private DiscordService discordService;
     private LinkService linkService;
+    private DiscordTeamRoleSyncService discordTeamRoleSyncService;
 
     private EventDispatcher eventDispatcher;
 
@@ -82,6 +86,7 @@ public final class LegendaryCraft extends JavaPlugin {
             this.lockedChestRepository = new LockedChestRepository(database);
             this.discordLinkCodeRepository = new DiscordLinkCodeRepository(database);
             this.discordUserRepository = new DiscordUserRepository(database);
+            this.discordTeamRoleRepository = new DiscordTeamRoleRepository(database);
 
             // Init Caches \\
             this.teamCache = new TeamCache();
@@ -104,10 +109,20 @@ public final class LegendaryCraft extends JavaPlugin {
             eventDispatcher.registerListener(TeamCreatedEvent.class, tagUpdater.onTeamCreated());
 
 
+
             this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
             this.chestService = new ChestService(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
             this.linkService = new LinkService(discordLinkCodeRepository, discordUserRepository);
             this.discordService = new DiscordService(this);
+            this.discordTeamRoleSyncService = new DiscordTeamRoleSyncService(this, discordService, teamService, teamRepository, discordTeamRoleRepository, discordUserRepository);
+
+            // Discord role sync listeners (after services are initialized)
+            eventDispatcher.registerListener(TeamCreatedEvent.class, discordTeamRoleSyncService.onTeamCreated());
+            eventDispatcher.registerListener(TeamDeletedEvent.class, discordTeamRoleSyncService.onTeamDeleted());
+            eventDispatcher.registerListener(TeamColorChangedEvent.class, discordTeamRoleSyncService.onTeamColorChanged());
+            eventDispatcher.registerListener(TeamNameChangedEvent.class, discordTeamRoleSyncService.onTeamNameChanged());
+            eventDispatcher.registerListener(PlayerAddedToTeamEvent.class, discordTeamRoleSyncService.onPlayerAdded());
+            eventDispatcher.registerListener(PlayerRemovedFromTeamEvent.class, discordTeamRoleSyncService.onPlayerRemoved());
 
             this.playerNameService = new PlayerNameService();
 
