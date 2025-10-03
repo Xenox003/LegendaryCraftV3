@@ -56,23 +56,9 @@ public final class LegendaryCraft extends JavaPlugin {
     private TeamService teamService;
     private ChestService chestService;
     private PlayerNameService playerNameService;
+    private DiscordService discordService;
 
     private EventDispatcher eventDispatcher;
-
-    private JDA jda;
-
-    public void updateDiscordPresence() {
-        try {
-            JDA j = this.jda;
-            if (j == null) return;
-            int online = Bukkit.getOnlinePlayers().size();
-            String text = String.format("%d Spieler online", online);
-            j.getPresence().setActivity(Activity.customStatus(text));
-        } catch (Throwable t) {
-            // Be defensive: never let presence updates crash anything
-            getLogger().log(Level.FINE, "Failed to update Discord presence", t);
-        }
-    }
 
     @Override
     public void onEnable() {
@@ -113,6 +99,7 @@ public final class LegendaryCraft extends JavaPlugin {
 
             this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
             this.chestService = new ChestService(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
+            this.discordService = new DiscordService(this);
 
             this.playerNameService = new PlayerNameService();
 
@@ -131,9 +118,6 @@ public final class LegendaryCraft extends JavaPlugin {
             // Player List Update Scheduler \\
             Bukkit.getScheduler().runTaskTimer(this, PlayerListComponents::updateGlobalPlayerlist, 1L, 100L);
 
-            // Discord Presence Update Scheduler (every 30s) \\
-            Bukkit.getScheduler().runTaskTimer(this, this::updateDiscordPresence, 20L, 600L);
-
             // Events \\
             Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
             Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
@@ -147,30 +131,6 @@ public final class LegendaryCraft extends JavaPlugin {
             ex.printStackTrace();
             Bukkit.getPluginManager().disablePlugin(this);
         }
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                EnumSet<GatewayIntent> intents = EnumSet.of(
-                        GatewayIntent.GUILD_MESSAGES,
-                        GatewayIntent.GUILD_MESSAGE_REACTIONS
-                        // Add only what you need. MESSAGE_CONTENT is privileged; enable in bot settings if used.
-                        // GatewayIntent.MESSAGE_CONTENT
-                );
-
-                JDA built = JDABuilder.createDefault(this.getConfig().getString("discord.access_token"), intents)
-                        .disableCache(net.dv8tion.jda.api.utils.cache.CacheFlag.SCHEDULED_EVENTS,
-                                net.dv8tion.jda.api.utils.cache.CacheFlag.EMOJI)
-                        .addEventListeners(new ReadyListener())
-                        .build(); // login is async
-
-                this.jda = built;
-            } catch (Exception e) {
-                getLogger().log(Level.SEVERE, "Failed to start JDA", e);
-                // Disable plugin on the main thread to be safe:
-                Bukkit.getScheduler().runTask(this, () ->
-                        getServer().getPluginManager().disablePlugin(this));
-            }
-        });
     }
 
     @Override
@@ -181,17 +141,10 @@ public final class LegendaryCraft extends JavaPlugin {
             getLogger().severe("failed to disconnect from DB: " + ex.getMessage());
         }
 
-        JDA local = this.jda;
-        if (local != null) {
-            try {
-                local.shutdown(); // graceful
-                local.awaitShutdown(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            } finally {
-                if (local.getStatus() != JDA.Status.SHUTDOWN) {
-                    local.shutdownNow(); // force if still alive
-                }
-            }
+        try {
+            this.discordService.disable();
+        } catch (Exception ex) {
+            getLogger().log(Level.SEVERE, "Failed to disable Discord integration: " + ex.getMessage(), ex);
         }
 
         getLogger().info("Plugin disabled.");

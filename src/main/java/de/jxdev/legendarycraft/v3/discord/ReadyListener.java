@@ -1,17 +1,26 @@
 package de.jxdev.legendarycraft.v3.discord;
 
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
+import de.jxdev.legendarycraft.v3.service.DiscordService;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
 
 public class ReadyListener extends ListenerAdapter {
-    @Override public void onReady(ReadyEvent event) {
+    private final LegendaryCraft plugin;
+    private final DiscordService discordService;
+
+    public ReadyListener(LegendaryCraft plugin, DiscordService discordService) {
+        this.plugin = plugin;
+        this.discordService = discordService;
+    }
+
+    @Override public void onReady(@NotNull ReadyEvent event) {
         // Switch to the server thread before touching Bukkit API and update presence:
         Bukkit.getScheduler().runTask(LegendaryCraft.getInstance(), () -> {
-            LegendaryCraft plugin = LegendaryCraft.getInstance();
             plugin.getLogger().info("JDA is connected as " + event.getJDA().getSelfUser().getAsTag());
-            plugin.updateDiscordPresence();
+            discordService.updateDiscordPresence();
         });
     }
 }
