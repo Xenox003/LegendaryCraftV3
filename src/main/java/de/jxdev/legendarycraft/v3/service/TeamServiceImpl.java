@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -193,6 +194,12 @@ public class TeamServiceImpl implements TeamService {
         try {
             repo.addMember(team.getId(), playerId, role);
             cache.indexPlayer(playerId, team.getId());
+
+            // Update Player prefixes etc \\
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                TeamUtil.updatePlayerTag(player);
+            }
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -249,6 +256,12 @@ public class TeamServiceImpl implements TeamService {
         try {
             repo.removeMember(team.getId(), playerId);
             cache.deIndexPlayer(playerId);
+
+            // Update Player prefixes etc \\
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                TeamUtil.removePlayerTag(player);
+            }
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }

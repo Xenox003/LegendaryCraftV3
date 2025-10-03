@@ -276,8 +276,24 @@ public class TeamCommand {
 
     private int teamKickExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
+        TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        throw new NotImplementedException();
+        final PlayerProfileListResolver targetResolver = context.getArgument("player", PlayerProfileListResolver.class);
+        final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
+        final var playerProfile = targetProfiles.iterator().next();
+
+        try {
+            plugin.getTeamService().removePlayerFromTeam(team, playerProfile.getId());
+
+            sender.sendMessage(Component.translatable("team.success.kick",
+                    Component.text(Objects.requireNonNullElse(playerProfile.getName(), "UNKNOWN")))
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamInviteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -325,8 +341,24 @@ public class TeamCommand {
 
     private int teamLeaveExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        throw new NotImplementedException();
+        if (plugin.getTeamService().isPlayerTeamOwner(sender.getUniqueId(), team)) {
+            sender.sendMessage(Component.translatable("team.error.cannot_leave_owner").color(NamedTextColor.RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        try {
+            plugin.getTeamService().removePlayerFromTeam(team, sender.getUniqueId());
+
+            sender.sendMessage(Component.translatable("team.success.leave", team.getChatComponent())
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
+
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamChatExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
