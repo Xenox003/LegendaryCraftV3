@@ -9,6 +9,8 @@ import de.jxdev.legendarycraft.v3.data.db.IDatabaseService;
 import de.jxdev.legendarycraft.v3.data.db.SqliteDatabaseService;
 import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
+import de.jxdev.legendarycraft.v3.data.repository.DiscordLinkCodeRepository;
+import de.jxdev.legendarycraft.v3.data.repository.DiscordUserRepository;
 import de.jxdev.legendarycraft.v3.discord.ReadyListener;
 import de.jxdev.legendarycraft.v3.event.team.*;
 import de.jxdev.legendarycraft.v3.listener.*;
@@ -49,6 +51,8 @@ public final class LegendaryCraft extends JavaPlugin {
 
     private TeamRepository teamRepository;
     private LockedChestRepository lockedChestRepository;
+    private DiscordLinkCodeRepository discordLinkCodeRepository;
+    private DiscordUserRepository discordUserRepository;
 
     private TeamCache teamCache;
     private LockedChestCache lockedChestCache;
@@ -57,6 +61,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private ChestService chestService;
     private PlayerNameService playerNameService;
     private DiscordService discordService;
+    private LinkService linkService;
 
     private EventDispatcher eventDispatcher;
 
@@ -75,6 +80,8 @@ public final class LegendaryCraft extends JavaPlugin {
             // Init DB Repositories \\
             this.teamRepository = new TeamRepository(database);
             this.lockedChestRepository = new LockedChestRepository(database);
+            this.discordLinkCodeRepository = new DiscordLinkCodeRepository(database);
+            this.discordUserRepository = new DiscordUserRepository(database);
 
             // Init Caches \\
             this.teamCache = new TeamCache();
@@ -99,6 +106,7 @@ public final class LegendaryCraft extends JavaPlugin {
 
             this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
             this.chestService = new ChestService(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
+            this.linkService = new LinkService(discordLinkCodeRepository, discordUserRepository);
             this.discordService = new DiscordService(this);
 
             this.playerNameService = new PlayerNameService();
@@ -113,6 +121,9 @@ public final class LegendaryCraft extends JavaPlugin {
 
                 LiteralCommandNode<CommandSourceStack> chestCommand = new ChestCommand().getCommand();
                 commands.registrar().register(chestCommand);
+
+                LiteralCommandNode<CommandSourceStack> linkCommand = new de.jxdev.legendarycraft.v3.commands.LinkCommand().getCommand();
+                commands.registrar().register(linkCommand);
             });
 
             // Player List Update Scheduler \\

@@ -4,6 +4,8 @@ import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.service.DiscordService;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,11 +18,20 @@ public class ReadyListener extends ListenerAdapter {
         this.discordService = discordService;
     }
 
-    @Override public void onReady(@NotNull ReadyEvent event) {
+    @Override
+    public void onReady(@NotNull ReadyEvent event) {
         // Switch to the server thread before touching Bukkit API and update presence:
         Bukkit.getScheduler().runTask(LegendaryCraft.getInstance(), () -> {
             plugin.getLogger().info("JDA is connected as " + event.getJDA().getSelfUser().getAsTag());
             discordService.updateDiscordPresence();
         });
+
+        // Init Commands \\
+        discordService.getJda().upsertCommand(
+                Commands.slash("link", "Verlinkt deinen Minecraft und Discord account")
+                        .addOption(OptionType.STRING, "code", "Der Link-Code", true)
+        ).queue();
+
+        plugin.getLogger().info("Discord Commands initialized.");
     }
 }

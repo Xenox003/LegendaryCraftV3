@@ -104,6 +104,24 @@ public class SqliteDatabaseService implements IDatabaseService {
                     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
+
+            // Table for Discord Link Codes \\
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS discord_link_codes(
+                    code        TEXT PRIMARY KEY NOT NULL,
+                    player_id   TEXT NOT NULL,
+                    expires     TIMESTAMP NOT NULL DEFAULT (datetime('now', '+10 minutes')),
+                    created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """);
+
+            // Table for Discord-to-Minecraft Links \\
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS discord_users(
+                    discord_id  TEXT PRIMARY KEY NOT NULL,
+                    player_id   TEXT NOT NULL
+                )
+            """);
         }
     }
 

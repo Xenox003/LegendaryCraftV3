@@ -19,5 +19,4 @@ permissions:
 
 libraries:
   - net.dv8tion:JDA:5.6.1
-  - org.slf4j:slf4j-api:2.0.16        # JDA needs SLF4J API
-  - org.xerial:sqlite-jdbc:3.46.0.0    # you use sqlite too
+  - org.apache.logging.log4j:log4j-slf4j2-impl:2.24.1
