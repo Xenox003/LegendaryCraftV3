@@ -124,25 +124,28 @@ public class TeamRepository {
     }
 
     public void invitePlayerToTeam(int teamId, UUID playerId) throws SQLException {
-        db.update("INSERT INTO team_invitations(team_id,player_id) VALUES(?,?)", teamId, playerId.toString());
+        db.update("INSERT INTO team_invites(team_id,player_id) VALUES(?,?)", teamId, playerId.toString());
     }
     public void removeInviteFromTeam(int teamId, UUID playerId) throws SQLException {
-        db.update("DELETE FROM team_invitations WHERE team_id=? AND player_id=?", teamId, playerId.toString());
+        db.update("DELETE FROM team_invites WHERE team_id=? AND player_id=?", teamId, playerId.toString());
     }
     public void acceptTeamInvite(int teamId, UUID playerId) throws SQLException {
         db.inTransaction(conn -> {
+            PreparedStatement invitationStatement = conn.prepareStatement("DELETE FROM team_invites WHERE team_id=? AND player_id=?");
+            invitationStatement.setInt(1, teamId);
+            invitationStatement.setString(2, playerId.toString());
+            invitationStatement.executeUpdate();
+
             PreparedStatement statement = conn.prepareStatement("INSERT INTO team_members(team_id,player_id,role) VALUES(?,?,?)");
             statement.setInt(1, teamId);
             statement.setString(2, playerId.toString());
             statement.setString(3, TeamMemberRole.MEMBER.name());
             statement.executeUpdate();
 
-            PreparedStatement invitationStatement = conn.prepareStatement("DELETE FROM team_invitations WHERE team_id=? AND player_id=?");
-            invitationStatement.setInt(1, teamId);
-            invitationStatement.setString(2, playerId.toString());
-            invitationStatement.executeUpdate();
-
             return null;
         });
+    }
+    public boolean isPlayerInvitedToTeam(UUID playerId, int teamId) throws SQLException {
+        return db.queryOne("SELECT COUNT(*) as count FROM team_invites WHERE team_id=? AND player_id=? AND expires > datetime('now')", rs -> rs.getInt("count") > 0, teamId, playerId.toString()).orElse(false);
     }
 }

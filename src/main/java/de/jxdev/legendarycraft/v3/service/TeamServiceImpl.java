@@ -4,9 +4,15 @@ import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
 import de.jxdev.legendarycraft.v3.data.models.team.*;
 import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.exception.ServiceException;
+import de.jxdev.legendarycraft.v3.exception.team.*;
 import de.jxdev.legendarycraft.v3.util.TeamUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -64,13 +70,15 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public Team createTeam(String teamName, String prefix, UUID creator) {
+    public Team createTeam(String teamName, String prefix, UUID creator) throws TeamServiceException {
         return createTeam(teamName, prefix, NamedTextColor.WHITE, creator);
     }
 
     @Override
-    public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator) {
-        if (prefix.length() > 10) throw new IllegalArgumentException("Prefix must be at most 10 characters long");
+    public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator) throws TeamServiceException {
+        if (teamName.length() > 15) throw new TeamNameTooLongException();
+        if (getTeam(teamName).isPresent()) throw new TeamNameAlreadyUsedException();
+        if (prefix.length() > 15) throw new TeamPrefixTooLongException();
 
         try {
             // Create in DB \\
@@ -92,12 +100,12 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public void deleteTeam(int teamId) {
+    public void deleteTeam(TeamCacheRecord team) {
         try {
-            TeamUtil.removeAllMemberTags(teamId);
+            TeamUtil.removeAllMemberTags(team.getId());
 
-            repo.deleteTeam(teamId);
-            cache.deIndexTeam(teamId);
+            repo.deleteTeam(team.getId());
+            cache.deIndexTeam(team.getId());
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
@@ -122,49 +130,52 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public void setTeamPrefix(int teamId, String prefix) {
-        if (prefix.length() > 10) throw new IllegalArgumentException("Prefix must be at most 10 characters long");
+    public void setTeamPrefix(TeamCacheRecord team, String prefix) throws TeamServiceException {
+        if (prefix.length() > 15) throw new TeamPrefixTooLongException();
 
         try {
-            repo.updatePrefix(teamId, prefix);
+            repo.updatePrefix(team.getId(), prefix);
             // Prefix is not cached so we do not need to update the cache \\
 
             // Update Player prefixes etc \\
-            Team team = repo.findById(teamId).orElseThrow(() -> new IllegalStateException("Team not found"));
-            TeamUtil.updateAllPlayerTags(team);
+            Team dbTeam = repo.findById(team.getId()).orElseThrow(TeamNotFoundException::new);
+            TeamUtil.updateAllPlayerTags(dbTeam);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public void setTeamColor(int teamId, NamedTextColor color) {
+    public void setTeamColor(TeamCacheRecord team, NamedTextColor color) throws TeamServiceException {
         try {
             // Update DB \\
-            repo.updateColor(teamId, color);
+            repo.updateColor(team.getId(), color);
 
             // Update Cache \\
-            Optional<TeamCacheRecord> cachedTeam = cache.getTeam(teamId);
+            Optional<TeamCacheRecord> cachedTeam = cache.getTeam(team.getId());
             cachedTeam.ifPresent(teamCacheRecord -> teamCacheRecord.setColor(color));
 
             // Update Player prefixes etc \\
-            Team team = repo.findById(teamId).orElseThrow(() -> new IllegalStateException("Team not found"));
-            TeamUtil.updateAllPlayerTags(team);
+            Team dbTeam = repo.findById(team.getId()).orElseThrow(TeamNotFoundException::new);
+            TeamUtil.updateAllPlayerTags(dbTeam);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public void setTeamName(int teamId, String teamName) {
+    public void setTeamName(TeamCacheRecord team, String teamName) throws TeamServiceException {
+        if (teamName.length() > 15) throw new TeamNameTooLongException();
+        if (getTeam(teamName).isPresent()) throw new TeamNameAlreadyUsedException();
+
         try {
             // Update DB \\
-            repo.updateName(teamId, teamName);
+            repo.updateName(team.getId(), teamName);
 
             // Update Cache \\
-            Optional<TeamCacheRecord> team = cache.getTeam(teamId);
-            team.ifPresent(teamCacheRecord -> teamCacheRecord.setName(teamName));
-            team.ifPresent(cache::updateNameIndex);
+            Optional<TeamCacheRecord> dbTeam = cache.getTeam(team.getId());
+            dbTeam.ifPresent(teamCacheRecord -> teamCacheRecord.setName(teamName));
+            dbTeam.ifPresent(cache::updateNameIndex);
 
             // No need to update player prefixes cause they do not require team name \\
         } catch (SQLException ex) {
@@ -173,50 +184,50 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public void addPlayerToTeam(int teamId, UUID playerId) {
-        addPlayerToTeam(teamId, playerId, TeamMemberRole.MEMBER);
+    public void addPlayerToTeam(TeamCacheRecord team, UUID playerId) {
+        addPlayerToTeam(team, playerId, TeamMemberRole.MEMBER);
     }
 
     @Override
-    public void addPlayerToTeam(int teamId, UUID playerId, TeamMemberRole role) {
+    public void addPlayerToTeam(TeamCacheRecord team, UUID playerId, TeamMemberRole role) {
         try {
-            repo.addMember(teamId, playerId, role);
-            cache.indexPlayer(playerId, teamId);
+            repo.addMember(team.getId(), playerId, role);
+            cache.indexPlayer(playerId, team.getId());
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public List<TeamMember> getMemberList(int teamId) {
+    public List<TeamMember> getMemberList(TeamCacheRecord team) {
         try {
-            return repo.getMemberList(teamId);
+            return repo.getMemberList(team.getId());
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public int getMemberCount(int teamId) {
+    public int getMemberCount(TeamCacheRecord team) {
         try {
-            return repo.getMemberCount(teamId);
+            return repo.getMemberCount(team.getId());
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public Optional<TeamMemberRole> getPlayerMemberRole(int teamId, UUID playerId) {
+    public Optional<TeamMemberRole> getPlayerMemberRole(TeamCacheRecord team, UUID playerId) {
         try {
-            return repo.getMemberRole(teamId, playerId);
+            return repo.getMemberRole(team.getId(), playerId);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public boolean isPlayerInTeam(UUID playerId, int teamId) {
-        return getPlayerMemberRole(teamId, playerId).isPresent();
+    public boolean isPlayerInTeam(UUID playerId, TeamCacheRecord team) {
+        return getPlayerMemberRole(team, playerId).isPresent();
     }
 
     @Override
@@ -229,14 +240,14 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public boolean isPlayerTeamOwner(UUID playerId, int teamId) {
-        return getPlayerMemberRole(teamId, playerId).filter(role -> role == TeamMemberRole.OWNER).isPresent();
+    public boolean isPlayerTeamOwner(UUID playerId, TeamCacheRecord team) {
+        return getPlayerMemberRole(team, playerId).filter(role -> role == TeamMemberRole.OWNER).isPresent();
     }
 
     @Override
-    public void removePlayerFromTeam(int teamId, UUID playerId) {
+    public void removePlayerFromTeam(TeamCacheRecord team, UUID playerId) {
         try {
-            repo.removeMember(teamId, playerId);
+            repo.removeMember(team.getId(), playerId);
             cache.deIndexPlayer(playerId);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
@@ -244,27 +255,53 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public void invitePlayerToTeam(int teamId, UUID playerId) {
+    public void invitePlayerToTeam(TeamCacheRecord team, UUID playerId) {
         try {
-            repo.invitePlayerToTeam(teamId, playerId);
+            repo.invitePlayerToTeam(team.getId(), playerId);
+
+            final Player target = Bukkit.getPlayer(playerId);
+            if (target != null) {
+                target.sendMessage(Component.translatable("team.invite.message",
+                                team.getChatComponent(),
+                                Component.translatable("team.invite.clickable")
+                                        .style(Style.style(NamedTextColor.GREEN, TextDecoration.UNDERLINED))
+                                        .clickEvent(ClickEvent.runCommand("/team join " + team.getName()))
+                        )
+                );
+            }
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public void acceptInvite(int teamId, UUID playerId) {
+    public void acceptInvite(TeamCacheRecord team, UUID playerId) throws TeamServiceException {
+        if (getCachedTeamByPlayer(playerId).isPresent())
+            throw new TeamAlreadyMemberException();
+
         try {
-            repo.acceptTeamInvite(teamId, playerId);
+            if (!repo.isPlayerInvitedToTeam(playerId, team.getId()))
+                throw  new TeamNotInvitedException();
+
+            repo.acceptTeamInvite(team.getId(), playerId);
+            cache.indexPlayer(playerId, team.getId());
+
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                TeamUtil.updatePlayerTag(player);
+            }
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public void declineInvite(int teamId, UUID playerId) {
+    public void declineInvite(TeamCacheRecord team, UUID playerId) throws TeamServiceException {
         try {
-            repo.removeInviteFromTeam(teamId, playerId);
+            if (!repo.isPlayerInvitedToTeam(playerId, team.getId()))
+                throw  new TeamNotInvitedException();
+
+            repo.removeInviteFromTeam(team.getId(), playerId);
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);
         }

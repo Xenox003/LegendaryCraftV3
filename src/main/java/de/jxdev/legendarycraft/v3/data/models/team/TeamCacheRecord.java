@@ -11,9 +11,9 @@ import net.kyori.adventure.text.format.NamedTextColor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamCacheRecord {
-    private int id;
-    private String name;
-    private NamedTextColor color;
+    protected int id;
+    protected String name;
+    protected NamedTextColor color;
 
     public static TeamCacheRecord fromTeam(Team team) {
         return new TeamCacheRecord(team.getId(), team.getName(), team.getColor());

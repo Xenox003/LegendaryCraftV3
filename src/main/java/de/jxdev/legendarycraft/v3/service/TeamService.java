@@ -1,6 +1,8 @@
 package de.jxdev.legendarycraft.v3.service;
 
 import de.jxdev.legendarycraft.v3.data.models.team.*;
+import de.jxdev.legendarycraft.v3.exception.ServiceException;
+import de.jxdev.legendarycraft.v3.exception.team.TeamServiceException;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TeamService {
-    public Optional<Team> getTeam(int teamId);
+    public Optional<Team> getTeam(int teamId) throws ServiceException;
     public Optional<Team> getTeam(String teamName);
     public Optional<Team> getTeamByPlayer(UUID playerId);
 
@@ -16,35 +18,34 @@ public interface TeamService {
     public Optional<TeamCacheRecord> getCachedTeamByPlayer(UUID playerId);
     public Optional<Integer> getTeamIdByPlayer(UUID playerId);
 
-    public Team createTeam(String teamName, String prefix, UUID creator);
-    public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator);
-    public void deleteTeam(int teamId);
+    public Team createTeam(String teamName, String prefix, UUID creator) throws TeamServiceException;
+    public Team createTeam(String teamName, String prefix, NamedTextColor color, UUID creator) throws TeamServiceException;
+    public void deleteTeam(TeamCacheRecord team) throws TeamServiceException;
 
     List<Team> getAll();
-
     List<TeamWithMemberCount> getAllWithMemberCount();
 
-    public void setTeamPrefix(int teamId, String prefix);
-    public void setTeamColor(int teamId, NamedTextColor color);
-    public void setTeamName(int teamId, String teamName);
+    public void setTeamPrefix(TeamCacheRecord team, String prefix) throws TeamServiceException;
+    public void setTeamColor(TeamCacheRecord team, NamedTextColor color) throws TeamServiceException;
+    public void setTeamName(TeamCacheRecord team, String teamName) throws TeamServiceException;
 
-    public void addPlayerToTeam(int teamId, UUID playerId);
-    public void addPlayerToTeam(int teamId, UUID playerId, TeamMemberRole role);
+    public void addPlayerToTeam(TeamCacheRecord team, UUID playerId) throws TeamServiceException;
+    public void addPlayerToTeam(TeamCacheRecord team, UUID playerId, TeamMemberRole role) throws TeamServiceException;
 
-    List<TeamMember> getMemberList(int teamId);
-    int getMemberCount(int teamId);
+    List<TeamMember> getMemberList(TeamCacheRecord team);
+    int getMemberCount(TeamCacheRecord team);
 
-    Optional<TeamMemberRole> getPlayerMemberRole(int teamId, UUID playerId);
+    Optional<TeamMemberRole> getPlayerMemberRole(TeamCacheRecord team, UUID playerId);
 
-    boolean isPlayerInTeam(UUID playerId, int teamId);
+    boolean isPlayerInTeam(UUID playerId, TeamCacheRecord team) throws TeamServiceException;
 
     boolean isPlayerInAnyTeam(UUID playerId);
 
-    boolean isPlayerTeamOwner(UUID playerId, int teamId);
+    boolean isPlayerTeamOwner(UUID playerId, TeamCacheRecord team);
 
-    public void removePlayerFromTeam(int teamId, UUID playerId);
+    public void removePlayerFromTeam(TeamCacheRecord team, UUID playerId) throws TeamServiceException;
 
-    public void invitePlayerToTeam(int teamId, UUID playerId);
-    public void acceptInvite(int teamId, UUID playerId);
-    public void declineInvite(int teamId, UUID playerId);
+    public void invitePlayerToTeam(TeamCacheRecord team, UUID playerId) throws TeamServiceException;
+    public void acceptInvite(TeamCacheRecord team, UUID playerId) throws TeamServiceException;
+    public void declineInvite(TeamCacheRecord team, UUID playerId) throws TeamServiceException;
 }

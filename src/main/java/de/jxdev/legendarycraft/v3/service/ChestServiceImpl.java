@@ -2,10 +2,13 @@ package de.jxdev.legendarycraft.v3.service;
 
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
+import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
 import de.jxdev.legendarycraft.v3.data.models.BlockPos;
 import de.jxdev.legendarycraft.v3.data.models.LockedChest;
+import de.jxdev.legendarycraft.v3.data.models.team.TeamCacheRecord;
 import de.jxdev.legendarycraft.v3.data.repository.LockedChestRepository;
 import de.jxdev.legendarycraft.v3.exception.ServiceException;
+import de.jxdev.legendarycraft.v3.exception.team.TeamServiceException;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,9 +26,9 @@ public class ChestServiceImpl implements ChestService {
     }
 
     @Override
-    public List<LockedChest> getAllByTeam(int teamId) {
+    public List<LockedChest> getAllByTeam(TeamCacheRecord team) {
         try {
-            return repo.findByTeam(teamId);
+            return repo.findByTeam(team.getId());
         } catch (SQLException e) {
             throw new ServiceException(e.getMessage(), e);
         }
@@ -37,11 +40,11 @@ public class ChestServiceImpl implements ChestService {
     }
 
     @Override
-    public LockedChest create(int teamId, BlockPos pos) {
+    public LockedChest create(TeamCacheRecord team, BlockPos pos) {
         try {
-            LockedChest chest = new LockedChest(teamId, pos);
+            LockedChest chest = new LockedChest(team.getId(), pos);
 
-            repo.create(teamId, pos);
+            repo.create(team.getId(), pos);
             cache.index(chest);
 
             return chest;
@@ -61,17 +64,17 @@ public class ChestServiceImpl implements ChestService {
     }
 
     @Override
-    public int getChestLimit(int teamId) {
-        return maxChestsPerTeamMember * LegendaryCraft.getInstance().getTeamService().getMemberCount(teamId);
+    public int getChestLimit(TeamCacheRecord team) {
+        return maxChestsPerTeamMember * LegendaryCraft.getInstance().getTeamService().getMemberCount(team);
     }
 
     @Override
-    public int getChestCount(int teamId) {
-        return cache.getByTeam(teamId).size();
+    public int getChestCount(TeamCacheRecord team) {
+        return cache.getByTeam(team.getId()).size();
     }
 
     @Override
-    public boolean checkChestLimit(int teamId) {
-        return getChestCount(teamId) < getChestLimit(teamId);
+    public boolean checkChestLimit(TeamCacheRecord team) {
+        return getChestCount(team) < getChestLimit(team);
     }
 }

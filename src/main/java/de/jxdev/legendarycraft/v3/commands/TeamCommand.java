@@ -1,5 +1,6 @@
 package de.jxdev.legendarycraft.v3.commands;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.Message;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -10,12 +11,14 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.TeamArgument;
 import de.jxdev.legendarycraft.v3.data.models.team.*;
+import de.jxdev.legendarycraft.v3.exception.team.TeamServiceException;
 import de.jxdev.legendarycraft.v3.util.CommandUtil;
 import de.jxdev.legendarycraft.v3.util.TeamUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.NotImplementedException;
@@ -24,9 +27,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.sql.SQLException;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class TeamCommand {
 
@@ -89,7 +90,7 @@ public class TeamCommand {
                 )
                 .then(Commands.literal("kick")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
-                        .then(Commands.argument("player", ArgumentTypes.player())
+                        .then(Commands.argument("player", ArgumentTypes.playerProfiles())
                                 .executes(this::teamKickExecutor)
                         )
                 )
@@ -97,7 +98,7 @@ public class TeamCommand {
                 /* ---------- TEAM MEMBERSHIPS ---------- */
                 .then(Commands.literal("invite")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
-                        .then(Commands.argument("player", ArgumentTypes.player())
+                        .then(Commands.argument("player", ArgumentTypes.playerProfiles())
                                 .executes(this::teamInviteExecutor)
                         )
                 )
@@ -136,7 +137,7 @@ public class TeamCommand {
         CommandSender sender = context.getSource().getSender();
         TeamCacheRecord team = context.getArgument("team", TeamCacheRecord.class);
 
-        List<TeamMember> memberList = plugin.getTeamService().getMemberList(team.getId());
+        List<TeamMember> memberList = plugin.getTeamService().getMemberList(team);
 
         Component response = Component.translatable("team.info.members", team.getChatComponent());
         for (TeamMember member : memberList) {
@@ -170,16 +171,9 @@ public class TeamCommand {
     private int teamCreateExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         String name = StringArgumentType.getString(context, "name");
-        //String prefix = StringArgumentType.getString(context, "prefix");
-
-        // Validate Prefix \\
-        if (name.length() > 15) throw NAME_TOO_LONG.create();
 
         // Validate Team Membership \\
         TeamUtil.checkIfPlayerHasNoTeam(sender);
-
-        // Validate Team Name \\
-        if (plugin.getTeamService().getTeam(name).isPresent()) throw NAME_ALREADY_USED.create();
 
         NamedTextColor color = NamedTextColor.WHITE;
         try {
@@ -188,10 +182,14 @@ public class TeamCommand {
             // Ignored, color is optional
         }
 
-        Team team = plugin.getTeamService().createTeam(name, name, color, sender.getUniqueId());
+        try {
+            Team team = plugin.getTeamService().createTeam(name, name, color, sender.getUniqueId());
 
-        Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
-        sender.sendMessage(response);
+            Component response = Component.translatable("team.success.create", team.getChatComponent()).color(NamedTextColor.GREEN);
+            sender.sendMessage(response);
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -200,11 +198,15 @@ public class TeamCommand {
         TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        this.plugin.getTeamService().deleteTeam(team.getId());
+        try {
+            this.plugin.getTeamService().deleteTeam(team);
 
-        sender.sendMessage(Component.translatable("team.success.delete", team.getChatComponent())
-                .color(NamedTextColor.GREEN)
-        );
+            sender.sendMessage(Component.translatable("team.success.delete", team.getChatComponent())
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
 
         return Command.SINGLE_SUCCESS;
     }
@@ -217,16 +219,16 @@ public class TeamCommand {
         // Validate Permissions \\
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        // Validate Team Name \\
-        if (plugin.getTeamService().getTeam(name).isPresent()) throw NAME_ALREADY_USED.create();
-        if (name.length() > 15) throw NAME_TOO_LONG.create();
+        try {
+            // Change Name \\
+            plugin.getTeamService().setTeamName(team, name);
 
-        // Change Name \\
-        plugin.getTeamService().setTeamName(team.getId(), name);
-
-        sender.sendMessage(Component.translatable("team.success.settings.name", Component.text(name))
-                .color(NamedTextColor.GREEN)
-        );
+            sender.sendMessage(Component.translatable("team.success.settings.name", Component.text(name))
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -238,12 +240,16 @@ public class TeamCommand {
         // Validate Permissions \\
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        // Change Color \\
-        plugin.getTeamService().setTeamColor(team.getId(), color);
+        try {
+            // Change Color \\
+            plugin.getTeamService().setTeamColor(team, color);
 
-        sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(color.toString()))
-                .color(NamedTextColor.GREEN)
-        );
+            sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(color.toString()))
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -255,15 +261,16 @@ public class TeamCommand {
         // Validate Permissions \\
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        // Validate Prefix \\
-        if (prefix.length() > 15) throw PREFIX_TOO_LONG.create();
+        try {
+            // Change Prefix \\
+            plugin.getTeamService().setTeamPrefix(team, prefix);
 
-        // Change Prefix \\
-        plugin.getTeamService().setTeamPrefix(team.getId(), prefix);
-
-        sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(prefix))
-                .color(NamedTextColor.GREEN)
-        );
+            sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(prefix))
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -275,14 +282,45 @@ public class TeamCommand {
 
     private int teamInviteExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        throw new NotImplementedException();
+        final PlayerProfileListResolver targetResolver = context.getArgument("player", PlayerProfileListResolver.class);
+        final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
+        final var playerProfile = targetProfiles.iterator().next();
+
+        if (playerProfile == null)
+            throw new IllegalArgumentException("Player is null");
+        if (playerProfile.getId() == null)
+            throw new IllegalArgumentException("Player UUID is null");
+
+        try {
+            // Initialize Team Invite \\
+            plugin.getTeamService().invitePlayerToTeam(team, playerProfile.getId());
+
+            sender.sendMessage(Component.translatable("team.success.invite",
+                            Component.text(Objects.requireNonNullElse(playerProfile.getName(), playerProfile.getId().toString()))
+                    ).color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamJoinExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        TeamCacheRecord team = context.getArgument("team", TeamCacheRecord.class);
 
-        throw new NotImplementedException();
+        try {
+            plugin.getTeamService().acceptInvite(team, sender.getUniqueId());
+
+            sender.sendMessage(Component.translatable("team.success.join", team.getChatComponent())
+                    .color(NamedTextColor.GREEN)
+            );
+        } catch (TeamServiceException ex) {
+            sender.sendMessage(ex.getChatComponent().color(NamedTextColor.RED));
+        }
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamLeaveExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

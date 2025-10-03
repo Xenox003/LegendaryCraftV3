@@ -8,17 +8,18 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Team {
-    private int id;
-    private String name;
+public class Team extends TeamCacheRecord{
     private String prefix;
-    private NamedTextColor color;
 
-    public Component getChatComponent() {
-        return TeamUtil.getChatComponent(this.name, this.color);
+    public Team(int teamId, String teamName, String prefix, NamedTextColor color) {
+        this.id = teamId;
+        this.name = teamName;
+        this.prefix = prefix;
+        this.color = color;
     }
 
     public Component getPrefixComponent() {

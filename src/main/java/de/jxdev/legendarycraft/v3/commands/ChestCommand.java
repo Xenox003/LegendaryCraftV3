@@ -84,12 +84,12 @@ public class ChestCommand {
         }
 
         // Enforce Limit \\
-        if (!plugin.getChestService().checkChestLimit(team.getId())) {
-            throw LIMIT_REACHED.create(plugin.getChestService().getChestLimit(team.getId()));
+        if (!plugin.getChestService().checkChestLimit(team)) {
+            throw LIMIT_REACHED.create(plugin.getChestService().getChestLimit(team));
         }
 
         // Lock Chest \\
-        plugin.getChestService().create(team.getId(), targetPos);
+        plugin.getChestService().create(team, targetPos);
 
         player.sendMessage(Component.translatable("chest.success.lock"));
         return Command.SINGLE_SUCCESS;
@@ -121,7 +121,7 @@ public class ChestCommand {
     private int chestListExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player player = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(player);
-        List<LockedChest> chestList = plugin.getChestService().getAllByTeam(team.getId());
+        List<LockedChest> chestList = plugin.getChestService().getAllByTeam(team);
 
         Component response = Component.translatable("chest.info.list", team.getChatComponent());
         for (LockedChest chest : chestList) {

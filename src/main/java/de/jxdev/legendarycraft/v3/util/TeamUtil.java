@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.data.models.team.Team;
 import de.jxdev.legendarycraft.v3.data.models.team.TeamCacheRecord;
+import de.jxdev.legendarycraft.v3.exception.team.TeamServiceException;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -84,7 +85,7 @@ public class TeamUtil {
      * @throws CommandSyntaxException when the player doesn't own the team
      */
     public static void checkPlayerOwnsTeam(Player player, TeamCacheRecord team) throws CommandSyntaxException {
-        if (!plugin.getTeamService().isPlayerTeamOwner(player.getUniqueId(), team.getId())) {
+        if (!plugin.getTeamService().isPlayerTeamOwner(player.getUniqueId(), team)) {
             throw PLAYER_DOESNT_OWN_TEAM.create(team);
         }
     }

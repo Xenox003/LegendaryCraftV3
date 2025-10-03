@@ -82,10 +82,11 @@ public class SqliteDatabaseService implements IDatabaseService {
             // Table for Team Invites \\
             st.execute("""
                 CREATE TABLE IF NOT EXISTS team_invites(
-                    player_id   TEXT PRIMARY KEY NOT NULL,
+                    player_id   TEXT NOT NULL,
                     team_id     INTEGER NOT NULL,
-                    expires     TIMESTAMP NOT NULL,
+                    expires     TIMESTAMP NOT NULL DEFAULT (datetime('now', '+1 day')),
                     created     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (player_id, team_id),
                     FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
