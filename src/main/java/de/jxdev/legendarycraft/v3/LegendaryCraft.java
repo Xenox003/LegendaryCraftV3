@@ -172,6 +172,12 @@ public final class LegendaryCraft extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new PlayerHeadDropListener(), this);
             Bukkit.getPluginManager().registerEvents(new ChestProtectListener(this.chestService, this.teamService), this);
             Bukkit.getPluginManager().registerEvents(new CombatTagListener(this.spawnDebuffService), this);
+            Bukkit.getPluginManager().registerEvents(new SpawnElytraListener(
+                    this,
+                    getConfig().getInt("elytra.boost_value", 10),
+                    getConfig().getInt("elytra.radius", 25),
+                    Bukkit.getWorld("world")
+            ), this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {

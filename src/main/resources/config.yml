@@ -16,3 +16,9 @@ discord:
 spawn:
   cooldown_seconds: 240
   combat_tag_seconds: 30
+
+
+elytra:
+  radius: 50
+  boost_value: 5
+  world: world
