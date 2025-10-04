@@ -23,6 +23,7 @@ import de.jxdev.legendarycraft.v3.event.EventDispatcher;
 import de.jxdev.legendarycraft.v3.event.listeners.TeamTagUpdater;
 import de.jxdev.legendarycraft.v3.playerlist.PlayerListComponents;
 import de.jxdev.legendarycraft.v3.service.*;
+import de.jxdev.legendarycraft.v3.listener.CombatTagListener;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
@@ -65,6 +66,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private LinkService linkService;
     private PlayerStatsService playerStatsService;
     private TeamChatService teamChatService;
+    private SpawnDebuffService spawnDebuffService;
 
     private EventDispatcher eventDispatcher;
 
@@ -121,6 +123,11 @@ public final class LegendaryCraft extends JavaPlugin {
             this.playerStatsService = new PlayerStatsService(playerStatsRepository);
             this.teamChatService = new TeamChatService();
 
+            // Init Spawn Debuffs (cooldown + combat tag)
+            long spawnCooldown = getConfig().getLong("spawn.cooldown_seconds", 10);
+            long combatTag = getConfig().getLong("spawn.combat_tag_seconds", 10);
+            this.spawnDebuffService = new SpawnDebuffService(spawnCooldown, combatTag);
+
             // Discord role sync listeners (after services are initialized)
             /*
             eventDispatcher.registerListener(TeamCreatedEvent.class, discordTeamRoleSyncService.onTeamCreated());
@@ -164,6 +171,7 @@ public final class LegendaryCraft extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new ColoredSignListener(), this);
             Bukkit.getPluginManager().registerEvents(new PlayerHeadDropListener(), this);
             Bukkit.getPluginManager().registerEvents(new ChestProtectListener(this.chestService, this.teamService), this);
+            Bukkit.getPluginManager().registerEvents(new CombatTagListener(this.spawnDebuffService), this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {

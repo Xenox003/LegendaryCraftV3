@@ -12,3 +12,7 @@ chest:
 discord:
   access_token: ""
   guild_id: ""
+
+spawn:
+  cooldown_seconds: 240
+  combat_tag_seconds: 30
