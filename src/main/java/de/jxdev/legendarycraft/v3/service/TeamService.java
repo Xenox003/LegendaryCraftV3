@@ -94,6 +94,7 @@ public class TeamService {
 
             // Dispatch event for team creation \
             eventDispatcher.dispatchEvent(new TeamCreatedEvent(team));
+            eventDispatcher.dispatchEvent(new PlayerAddedToTeamEvent(team, creator));
             return team;
         } catch (SQLException ex) {
             throw new ServiceException(ex.getMessage(), ex);

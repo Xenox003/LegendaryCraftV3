@@ -25,6 +25,9 @@ public class PlayerJoinLeaveListener implements Listener {
         // Load TeamCache \\
         playerTeam.ifPresent(team -> plugin.getTeamCache().indexPlayer(playerId, team.getId()));
 
+        // Stats: mark join and session start \\
+        plugin.getPlayerStatsService().onPlayerJoin(playerId);
+
         // Set Name Prefix \\
         playerTeam.ifPresent(team -> TeamUtil.updatePlayerTag(event.getPlayer(), team));
 
@@ -45,6 +48,9 @@ public class PlayerJoinLeaveListener implements Listener {
 
         // Update PlayerNameService \\
         plugin.getPlayerNameService().cleanup(event.getPlayer());
+
+        // Stats: add session time \\
+        plugin.getPlayerStatsService().onPlayerQuit(event.getPlayer().getUniqueId());
 
         // Update Discord presence to reflect new player count
         plugin.getDiscordService().updateDiscordPresence();

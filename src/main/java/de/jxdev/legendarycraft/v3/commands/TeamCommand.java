@@ -265,7 +265,7 @@ public class TeamCommand {
             // Change Prefix \\
             plugin.getTeamService().setTeamPrefix(team, prefix);
 
-            sender.sendMessage(Component.translatable("team.success.settings.color", Component.text(prefix))
+            sender.sendMessage(Component.translatable("team.success.settings.prefix", Component.text(prefix))
                     .color(NamedTextColor.GREEN)
             );
         } catch (TeamServiceException ex) {

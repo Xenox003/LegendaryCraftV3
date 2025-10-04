@@ -1,20 +1,16 @@
 package de.jxdev.legendarycraft.v3.service;
 
-import com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
-import de.jxdev.legendarycraft.v3.discord.LinkCommandListener;
+import de.jxdev.legendarycraft.v3.discord.SlashCommandListener;
 import de.jxdev.legendarycraft.v3.discord.ReadyListener;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.internal.utils.JDALogger;
 import org.bukkit.Bukkit;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +47,7 @@ public class DiscordService {
                         .disableCache(net.dv8tion.jda.api.utils.cache.CacheFlag.SCHEDULED_EVENTS,
                                 net.dv8tion.jda.api.utils.cache.CacheFlag.EMOJI)
                         .addEventListeners(new ReadyListener(plugin, this))
-                        .addEventListeners(new LinkCommandListener(plugin, this))
+                        .addEventListeners(new SlashCommandListener(plugin, this))
                         .build();
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to start JDA", e);

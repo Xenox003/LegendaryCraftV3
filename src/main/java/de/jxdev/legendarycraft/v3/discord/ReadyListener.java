@@ -34,6 +34,12 @@ public class ReadyListener extends ListenerAdapter {
                         .addOption(OptionType.STRING, "code", "Der Link-Code", true)
         ).queue();
 
+        // Command to show the linked Minecraft account of a Discord user
+        discordService.getJda().upsertCommand(
+                Commands.slash("linked", "Zeigt den verlinkten Minecraft-Account eines Discord-Nutzers")
+                        .addOption(OptionType.USER, "user", "Der Discord-Nutzer (optional)", false)
+        ).queue();
+
         plugin.getLogger().info("Discord Commands initialized.");
     }
 }

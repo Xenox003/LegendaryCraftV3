@@ -131,6 +131,15 @@ public class SqliteDatabaseService implements IDatabaseService {
                     FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
                 )
             """);
+
+            // Table for Player Stats (playtime and joins) \\
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS player_stats(
+                    player_id   TEXT PRIMARY KEY NOT NULL,
+                    join_count  INTEGER NOT NULL DEFAULT 0,
+                    playtime_ms INTEGER NOT NULL DEFAULT 0
+                )
+            """);
         }
     }
 

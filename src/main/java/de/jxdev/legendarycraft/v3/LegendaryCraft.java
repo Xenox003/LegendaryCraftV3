@@ -2,6 +2,7 @@ package de.jxdev.legendarycraft.v3;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.ChestCommand;
+import de.jxdev.legendarycraft.v3.commands.StatsCommand;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
 import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
@@ -12,8 +13,8 @@ import de.jxdev.legendarycraft.v3.data.repository.TeamRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordLinkCodeRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordUserRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordTeamRoleRepository;
+import de.jxdev.legendarycraft.v3.data.repository.PlayerStatsRepository;
 import de.jxdev.legendarycraft.v3.discord.DiscordTeamRoleSyncService;
-import de.jxdev.legendarycraft.v3.discord.ReadyListener;
 import de.jxdev.legendarycraft.v3.event.team.*;
 import de.jxdev.legendarycraft.v3.listener.*;
 import de.jxdev.legendarycraft.v3.event.EventDispatcher;
@@ -24,18 +25,11 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import lombok.Setter;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.EnumSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 @Getter
@@ -56,6 +50,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private DiscordLinkCodeRepository discordLinkCodeRepository;
     private DiscordUserRepository discordUserRepository;
     private DiscordTeamRoleRepository discordTeamRoleRepository;
+    private PlayerStatsRepository playerStatsRepository;
 
     private TeamCache teamCache;
     private LockedChestCache lockedChestCache;
@@ -66,6 +61,7 @@ public final class LegendaryCraft extends JavaPlugin {
     private DiscordService discordService;
     private LinkService linkService;
     private DiscordTeamRoleSyncService discordTeamRoleSyncService;
+    private PlayerStatsService playerStatsService;
 
     private EventDispatcher eventDispatcher;
 
@@ -87,6 +83,7 @@ public final class LegendaryCraft extends JavaPlugin {
             this.discordLinkCodeRepository = new DiscordLinkCodeRepository(database);
             this.discordUserRepository = new DiscordUserRepository(database);
             this.discordTeamRoleRepository = new DiscordTeamRoleRepository(database);
+            this.playerStatsRepository = new PlayerStatsRepository(database);
 
             // Init Caches \\
             this.teamCache = new TeamCache();
@@ -115,6 +112,7 @@ public final class LegendaryCraft extends JavaPlugin {
             this.linkService = new LinkService(discordLinkCodeRepository, discordUserRepository);
             this.discordService = new DiscordService(this);
             this.discordTeamRoleSyncService = new DiscordTeamRoleSyncService(this, discordService, teamService, teamRepository, discordTeamRoleRepository, discordUserRepository);
+            this.playerStatsService = new PlayerStatsService(playerStatsRepository);
 
             // Discord role sync listeners (after services are initialized)
             eventDispatcher.registerListener(TeamCreatedEvent.class, discordTeamRoleSyncService.onTeamCreated());
@@ -139,6 +137,9 @@ public final class LegendaryCraft extends JavaPlugin {
 
                 LiteralCommandNode<CommandSourceStack> linkCommand = new de.jxdev.legendarycraft.v3.commands.LinkCommand().getCommand();
                 commands.registrar().register(linkCommand);
+
+                LiteralCommandNode<CommandSourceStack> playtimeCommand = new StatsCommand().getCommand();
+                commands.registrar().register(playtimeCommand);
             });
 
             // Player List Update Scheduler \\
