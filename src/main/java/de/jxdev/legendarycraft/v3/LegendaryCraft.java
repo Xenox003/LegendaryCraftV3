@@ -63,6 +63,7 @@ public final class LegendaryCraft extends JavaPlugin {
     //private DiscordTeamRoleSyncService discordTeamRoleSyncService;
     private LinkService linkService;
     private PlayerStatsService playerStatsService;
+    private TeamChatService teamChatService;
 
     private EventDispatcher eventDispatcher;
 
@@ -117,6 +118,7 @@ public final class LegendaryCraft extends JavaPlugin {
             //this.discordService = new DiscordService(this);
             //this.discordTeamRoleSyncService = new DiscordTeamRoleSyncService(this, discordService, teamService, teamRepository, discordTeamRoleRepository, discordUserRepository);
             this.playerStatsService = new PlayerStatsService(playerStatsRepository);
+            this.teamChatService = new TeamChatService();
 
             // Discord role sync listeners (after services are initialized)
             /*
@@ -153,7 +155,7 @@ public final class LegendaryCraft extends JavaPlugin {
 
             // Events \\
             Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveListener(), this);
-            Bukkit.getPluginManager().registerEvents(new PlayerChatListener(), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this.teamChatService, this.teamService), this);
             Bukkit.getPluginManager().registerEvents(new ColoredAnvilListener(), this);
             Bukkit.getPluginManager().registerEvents(new ColoredSignListener(), this);
             Bukkit.getPluginManager().registerEvents(new PlayerHeadDropListener(), this);

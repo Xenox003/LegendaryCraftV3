@@ -121,6 +121,7 @@ public class TeamCommand {
                         ))
                 .then(Commands.literal("chat_toggle")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
+                        .executes(this::teamChatToggleExecutor)
                 )
                 /*
                 .then(Commands.literal("admin")
@@ -369,14 +370,33 @@ public class TeamCommand {
 
     private int teamChatExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
+        String message = StringArgumentType.getString(context, "message");
 
-        throw new NotImplementedException();
+        // Build message component using ChatUtil
+        Component formatted = de.jxdev.legendarycraft.v3.util.ChatUtil.getTeamChatComponent(sender, Component.text(message));
+
+        // Send to all online team members
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            Optional<TeamCacheRecord> pt = plugin.getTeamService().getCachedTeamByPlayer(p.getUniqueId());
+            if (pt.isPresent() && pt.get().getId() == team.getId()) {
+                p.sendMessage(formatted);
+            }
+        }
+        // Also send to console
+        Bukkit.getConsoleSender().sendMessage(formatted);
+        return Command.SINGLE_SUCCESS;
     }
 
     private int teamChatToggleExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
-
-        throw new NotImplementedException();
+        boolean enabled = plugin.getTeamChatService().toggle(sender.getUniqueId());
+        if (enabled) {
+            sender.sendMessage(Component.translatable("team.chat.toggle.on").color(NamedTextColor.GREEN));
+        } else {
+            sender.sendMessage(Component.translatable("team.chat.toggle.off").color(NamedTextColor.YELLOW));
+        }
+        return Command.SINGLE_SUCCESS;
     }
 
 }
