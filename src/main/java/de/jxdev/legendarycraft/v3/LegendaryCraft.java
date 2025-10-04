@@ -15,6 +15,7 @@ import de.jxdev.legendarycraft.v3.data.repository.DiscordUserRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordTeamRoleRepository;
 import de.jxdev.legendarycraft.v3.data.repository.PlayerStatsRepository;
 import de.jxdev.legendarycraft.v3.discord.DiscordTeamRoleSyncService;
+import de.jxdev.legendarycraft.v3.event.listeners.ChestTeamDeleter;
 import de.jxdev.legendarycraft.v3.event.team.*;
 import de.jxdev.legendarycraft.v3.listener.*;
 import de.jxdev.legendarycraft.v3.event.EventDispatcher;
@@ -105,6 +106,9 @@ public final class LegendaryCraft extends JavaPlugin {
             eventDispatcher.registerListener(TeamDeletedEvent.class, tagUpdater.onTeamDeleted());
             eventDispatcher.registerListener(TeamCreatedEvent.class, tagUpdater.onTeamCreated());
 
+            ChestTeamDeleter chestTeamDeleter = new ChestTeamDeleter();
+            eventDispatcher.registerListener(TeamDeletedEvent.class, chestTeamDeleter.onTeamDelete());
+
 
 
             this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
@@ -153,6 +157,7 @@ public final class LegendaryCraft extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new ColoredAnvilListener(), this);
             Bukkit.getPluginManager().registerEvents(new ColoredSignListener(), this);
             Bukkit.getPluginManager().registerEvents(new PlayerHeadDropListener(), this);
+            Bukkit.getPluginManager().registerEvents(new ChestProtectListener(this.chestService, this.teamService), this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {

@@ -34,7 +34,27 @@ public class ChestService {
 
     
     public Optional<LockedChest> get(BlockPos pos) {
-        return this.cache.get(pos);
+        // First, attempt direct lookup
+        Optional<LockedChest> direct = this.cache.get(pos);
+        if (direct.isPresent()) return direct;
+
+        // Resolve potential double chest counterpart using Bukkit world + ChestUtil
+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(pos.worldId());
+        if (world == null) return Optional.empty();
+
+        org.bukkit.block.Block block = world.getBlockAt(pos.x(), pos.y(), pos.z());
+        // Only proceed if this is a chest block
+        if (block.getType() != org.bukkit.Material.CHEST) return Optional.empty();
+
+        // Use ChestUtil to resolve the group (single or double chest)
+        java.util.List<org.bukkit.block.Chest> group = de.jxdev.legendarycraft.v3.util.ChestUtil.resolveChestGroup(block);
+        for (org.bukkit.block.Chest chestState : group) {
+            de.jxdev.legendarycraft.v3.data.models.BlockPos candidate = de.jxdev.legendarycraft.v3.data.models.BlockPos.fromBlock(chestState.getBlock());
+            Optional<LockedChest> found = this.cache.get(candidate);
+            if (found.isPresent()) return found; // return locked counterpart if exists
+        }
+
+        return Optional.empty();
     }
 
     

@@ -23,6 +23,10 @@ public class LockedChestCache {
         byPos.remove(chest.getBlockPos());
         byTeam.get(chest.getTeamId()).remove(chest);
     }
+    public void deIndexTeam(int teamId) {
+        byTeam.remove(teamId);
+        byPos.entrySet().removeIf(e -> e.getValue().getTeamId() == teamId);
+    }
 
     public Optional<LockedChest> get(BlockPos pos) {
         return Optional.ofNullable(byPos.get(pos));
