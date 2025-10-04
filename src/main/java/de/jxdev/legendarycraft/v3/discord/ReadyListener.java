@@ -25,7 +25,7 @@ public class ReadyListener extends ListenerAdapter {
             plugin.getLogger().info("JDA is connected as " + event.getJDA().getSelfUser().getAsTag());
             discordService.updateDiscordPresence();
             // Initial sync of team roles
-            LegendaryCraft.getInstance().getDiscordTeamRoleSyncService().initialSyncAllTeams();
+            //LegendaryCraft.getInstance().getDiscordTeamRoleSyncService().initialSyncAllTeams();
         });
 
         // Init Commands \\

@@ -35,7 +35,7 @@ public class PlayerJoinLeaveListener implements Listener {
         event.joinMessage(Component.translatable("common.message.player_join", event.getPlayer().displayName().color(NamedTextColor.WHITE)).color(NamedTextColor.GOLD));
 
         // Update Discord presence to reflect new player count
-        plugin.getDiscordService().updateDiscordPresence();
+        //plugin.getDiscordService().updateDiscordPresence();
     }
 
     @EventHandler
@@ -53,7 +53,7 @@ public class PlayerJoinLeaveListener implements Listener {
         plugin.getPlayerStatsService().onPlayerQuit(event.getPlayer().getUniqueId());
 
         // Update Discord presence to reflect new player count
-        plugin.getDiscordService().updateDiscordPresence();
+        //plugin.getDiscordService().updateDiscordPresence();
     }
 
 }

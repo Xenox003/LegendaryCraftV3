@@ -58,9 +58,9 @@ public final class LegendaryCraft extends JavaPlugin {
     private TeamService teamService;
     private ChestService chestService;
     private PlayerNameService playerNameService;
-    private DiscordService discordService;
+    //private DiscordService discordService;
+    //private DiscordTeamRoleSyncService discordTeamRoleSyncService;
     private LinkService linkService;
-    private DiscordTeamRoleSyncService discordTeamRoleSyncService;
     private PlayerStatsService playerStatsService;
 
     private EventDispatcher eventDispatcher;
@@ -110,17 +110,19 @@ public final class LegendaryCraft extends JavaPlugin {
             this.teamService = new TeamService(teamRepository, teamCache, eventDispatcher);
             this.chestService = new ChestService(lockedChestRepository, lockedChestCache, maxChestsPerTeamMember);
             this.linkService = new LinkService(discordLinkCodeRepository, discordUserRepository);
-            this.discordService = new DiscordService(this);
-            this.discordTeamRoleSyncService = new DiscordTeamRoleSyncService(this, discordService, teamService, teamRepository, discordTeamRoleRepository, discordUserRepository);
+            //this.discordService = new DiscordService(this);
+            //this.discordTeamRoleSyncService = new DiscordTeamRoleSyncService(this, discordService, teamService, teamRepository, discordTeamRoleRepository, discordUserRepository);
             this.playerStatsService = new PlayerStatsService(playerStatsRepository);
 
             // Discord role sync listeners (after services are initialized)
+            /*
             eventDispatcher.registerListener(TeamCreatedEvent.class, discordTeamRoleSyncService.onTeamCreated());
             eventDispatcher.registerListener(TeamDeletedEvent.class, discordTeamRoleSyncService.onTeamDeleted());
             eventDispatcher.registerListener(TeamColorChangedEvent.class, discordTeamRoleSyncService.onTeamColorChanged());
             eventDispatcher.registerListener(TeamNameChangedEvent.class, discordTeamRoleSyncService.onTeamNameChanged());
             eventDispatcher.registerListener(PlayerAddedToTeamEvent.class, discordTeamRoleSyncService.onPlayerAdded());
             eventDispatcher.registerListener(PlayerRemovedFromTeamEvent.class, discordTeamRoleSyncService.onPlayerRemoved());
+             */
 
             this.playerNameService = new PlayerNameService();
 
@@ -169,7 +171,7 @@ public final class LegendaryCraft extends JavaPlugin {
         }
 
         try {
-            this.discordService.disable();
+            //this.discordService.disable();
         } catch (Exception ex) {
             getLogger().log(Level.SEVERE, "Failed to disable Discord integration: " + ex.getMessage(), ex);
         }
