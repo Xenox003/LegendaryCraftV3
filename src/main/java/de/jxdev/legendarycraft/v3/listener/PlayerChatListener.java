@@ -48,13 +48,14 @@ public class PlayerChatListener implements Listener {
     }
 
     private void sendTeamChat(TeamCacheRecord targetTeam, Player player, String message) {
+        Component chatComponent = ChatUtil.getTeamChatComponent(player, Component.text(message));
         for (Player p : Bukkit.getOnlinePlayers()) {
             teamService.getCachedTeamByPlayer(p.getUniqueId()).ifPresent(team -> {
                 if (Objects.equals(team.getId(), targetTeam.getId())) {
-                    p.sendMessage(ChatUtil.getTeamChatComponent(player, Component.text(message)));
+                    p.sendMessage(chatComponent);
                 }
             });
         }
-        Bukkit.getConsoleSender().sendMessage(message);
+        Bukkit.getConsoleSender().sendMessage(chatComponent);
     }
 }

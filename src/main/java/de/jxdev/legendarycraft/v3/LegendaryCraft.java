@@ -2,6 +2,7 @@ package de.jxdev.legendarycraft.v3;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.commands.ChestCommand;
+import de.jxdev.legendarycraft.v3.commands.SpawnCommand;
 import de.jxdev.legendarycraft.v3.commands.StatsCommand;
 import de.jxdev.legendarycraft.v3.commands.TeamCommand;
 import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
@@ -146,8 +147,11 @@ public final class LegendaryCraft extends JavaPlugin {
                 LiteralCommandNode<CommandSourceStack> linkCommand = new de.jxdev.legendarycraft.v3.commands.LinkCommand().getCommand();
                 commands.registrar().register(linkCommand);
 
-                LiteralCommandNode<CommandSourceStack> playtimeCommand = new StatsCommand().getCommand();
-                commands.registrar().register(playtimeCommand);
+                LiteralCommandNode<CommandSourceStack> statsCommand = new StatsCommand().getCommand();
+                commands.registrar().register(statsCommand);
+
+                LiteralCommandNode<CommandSourceStack> spawnCommand = new SpawnCommand().getCommand();
+                commands.registrar().register(spawnCommand);
             });
 
             // Player List Update Scheduler \\
