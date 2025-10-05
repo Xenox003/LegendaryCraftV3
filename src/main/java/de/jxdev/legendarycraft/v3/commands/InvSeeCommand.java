@@ -1,11 +1,16 @@
 package de.jxdev.legendarycraft.v3.commands;
 
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.OfflinePlayerArgument;
 import de.jxdev.legendarycraft.v3.util.CommandUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 
 public class InvSeeCommand {
     public LiteralCommandNode<CommandSourceStack> getCommand() {
@@ -17,7 +22,11 @@ public class InvSeeCommand {
                 ).build();
     }
 
-    private int invSeeExecutor(CommandContext<CommandSourceStack> context) {
+    private int invSeeExecutor(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Player viewer = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
+        OfflinePlayer offlineTarget = context.getArgument("player", OfflinePlayer.class);
+
+        LegendaryCraft.getInstance().getInvSeeController().open(viewer, offlineTarget);
         return 0;
     }
 }

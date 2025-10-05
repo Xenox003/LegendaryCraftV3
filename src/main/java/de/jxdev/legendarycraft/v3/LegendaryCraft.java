@@ -13,9 +13,9 @@ import de.jxdev.legendarycraft.v3.data.repository.DiscordLinkCodeRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordUserRepository;
 import de.jxdev.legendarycraft.v3.data.repository.DiscordTeamRoleRepository;
 import de.jxdev.legendarycraft.v3.data.repository.PlayerStatsRepository;
-import de.jxdev.legendarycraft.v3.discord.DiscordTeamRoleSyncService;
 import de.jxdev.legendarycraft.v3.event.listeners.ChestTeamDeleter;
 import de.jxdev.legendarycraft.v3.event.team.*;
+import de.jxdev.legendarycraft.v3.invsee.InvSeeController;
 import de.jxdev.legendarycraft.v3.listener.*;
 import de.jxdev.legendarycraft.v3.event.EventDispatcher;
 import de.jxdev.legendarycraft.v3.event.listeners.TeamTagUpdater;
@@ -29,6 +29,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -68,6 +69,8 @@ public final class LegendaryCraft extends JavaPlugin {
     private SpawnDebuffService spawnDebuffService;
 
     private EventDispatcher eventDispatcher;
+
+    private InvSeeController invSeeController;
 
     @Override
     public void onEnable() {
@@ -183,6 +186,10 @@ public final class LegendaryCraft extends JavaPlugin {
                     Bukkit.getWorld("world")
             ), this);
             Bukkit.getPluginManager().registerEvents(offlinePlayerCache, this);
+
+            File worldFolder = Bukkit.getWorlds().getFirst().getWorldFolder();
+            this.invSeeController = new InvSeeController(this, worldFolder);
+            Bukkit.getPluginManager().registerEvents(invSeeController, this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {
