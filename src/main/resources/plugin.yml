@@ -15,6 +15,9 @@ permissions:
   legendarycraft.team.admin:
     description: Allows using /team admin commands
     default: op
+  legendarycraft.invsee:
+    description: Allows using /invsee
+    default: op
 
 
 libraries:

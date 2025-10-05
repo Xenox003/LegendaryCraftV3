@@ -5,6 +5,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
+import de.jxdev.legendarycraft.v3.argument.OfflinePlayerArgument;
 import de.jxdev.legendarycraft.v3.service.PlayerStatsService;
 import de.jxdev.legendarycraft.v3.service.TeamService;
 import de.jxdev.legendarycraft.v3.util.CommandUtil;
@@ -14,6 +15,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.OfflinePlayer;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -25,34 +27,30 @@ public class StatsCommand {
         return Commands.literal("stats")
                 .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
                 .executes(this::statsExecutor)
-                .then(Commands.argument("player", ArgumentTypes.playerProfiles())
+                .then(Commands.argument("player", new OfflinePlayerArgument())
                         .executes(this::statsExecutor)
                 )
                 .build();
     }
 
     private int statsExecutor(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
-        PlayerProfile targetProfile;
+        OfflinePlayer targetPlayer;
 
         try {
-            final PlayerProfileListResolver targetResolver = context.getArgument("player", PlayerProfileListResolver.class);
-            final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
-            targetProfile = targetProfiles.iterator().next();
+            targetPlayer = context.getArgument("player", OfflinePlayer.class);
         } catch (Exception e) {
-            targetProfile = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender()).getPlayerProfile();
+            targetPlayer = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         }
-
-        if (targetProfile.getId() == null) throw new IllegalArgumentException("Player UUID is null");
 
         PlayerStatsService stats = plugin.getPlayerStatsService();
         TeamService teamService = plugin.getTeamService();
 
-        long playtimeMs = stats.getTotalPlaytimeMsIncludingActive(targetProfile.getId());
+        long playtimeMs = stats.getTotalPlaytimeMsIncludingActive(targetPlayer.getUniqueId());
         String playtimeFormatted = PlayerStatsService.formatDuration(playtimeMs);
-        int joinCount = stats.getJoinCount(targetProfile.getId());
-        var team = teamService.getTeamByPlayer(targetProfile.getId());
+        int joinCount = stats.getJoinCount(targetPlayer.getUniqueId());
+        var team = teamService.getTeamByPlayer(targetPlayer.getUniqueId());
 
-        Component response = Component.translatable("stats.info.stats_of", Component.text(Objects.requireNonNullElse(targetProfile.getName(), targetProfile.getId().toString())).color(NamedTextColor.AQUA))
+        Component response = Component.translatable("stats.info.stats_of", Component.text(Objects.requireNonNullElse(targetPlayer.getName(), targetPlayer.getUniqueId().toString())).color(NamedTextColor.AQUA))
                 .append(Component.newline())
                 .append(Component.text("- "))
                 .append(Component.translatable("stats.info.playtime", Component.text(playtimeFormatted).color(NamedTextColor.AQUA)))

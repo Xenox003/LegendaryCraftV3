@@ -1,11 +1,9 @@
 package de.jxdev.legendarycraft.v3;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import de.jxdev.legendarycraft.v3.commands.ChestCommand;
-import de.jxdev.legendarycraft.v3.commands.SpawnCommand;
-import de.jxdev.legendarycraft.v3.commands.StatsCommand;
-import de.jxdev.legendarycraft.v3.commands.TeamCommand;
+import de.jxdev.legendarycraft.v3.commands.*;
 import de.jxdev.legendarycraft.v3.data.cache.LockedChestCache;
+import de.jxdev.legendarycraft.v3.data.cache.OfflinePlayerCache;
 import de.jxdev.legendarycraft.v3.data.cache.TeamCache;
 import de.jxdev.legendarycraft.v3.data.db.IDatabaseService;
 import de.jxdev.legendarycraft.v3.data.db.SqliteDatabaseService;
@@ -57,6 +55,7 @@ public final class LegendaryCraft extends JavaPlugin {
 
     private TeamCache teamCache;
     private LockedChestCache lockedChestCache;
+    private OfflinePlayerCache offlinePlayerCache;
 
     private TeamService teamService;
     private ChestService chestService;
@@ -96,6 +95,8 @@ public final class LegendaryCraft extends JavaPlugin {
 
             this.lockedChestCache = new LockedChestCache();
             this.lockedChestRepository.findAll().forEach(chest -> lockedChestCache.index(chest));
+
+            this.offlinePlayerCache = new OfflinePlayerCache();
 
             // Init Services \
             int maxChestsPerTeamMember = getConfig().getInt("chest.max_per_team_member", 1);
@@ -159,6 +160,9 @@ public final class LegendaryCraft extends JavaPlugin {
 
                 LiteralCommandNode<CommandSourceStack> spawnCommand = new SpawnCommand().getCommand();
                 commands.registrar().register(spawnCommand);
+
+                LiteralCommandNode<CommandSourceStack> invseeCommand = new InvSeeCommand().getCommand();
+                commands.registrar().register(invseeCommand);
             });
 
             // Player List Update Scheduler \\
@@ -178,6 +182,7 @@ public final class LegendaryCraft extends JavaPlugin {
                     getConfig().getInt("elytra.radius", 25),
                     Bukkit.getWorld("world")
             ), this);
+            Bukkit.getPluginManager().registerEvents(offlinePlayerCache, this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {

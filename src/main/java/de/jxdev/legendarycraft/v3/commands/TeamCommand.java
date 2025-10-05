@@ -9,6 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
+import de.jxdev.legendarycraft.v3.argument.OfflinePlayerArgument;
 import de.jxdev.legendarycraft.v3.argument.TeamArgument;
 import de.jxdev.legendarycraft.v3.data.models.team.*;
 import de.jxdev.legendarycraft.v3.exception.team.TeamServiceException;
@@ -90,7 +91,7 @@ public class TeamCommand {
                 )
                 .then(Commands.literal("kick")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
-                        .then(Commands.argument("player", ArgumentTypes.playerProfiles())
+                        .then(Commands.argument("player", new OfflinePlayerArgument())
                                 .executes(this::teamKickExecutor)
                         )
                 )
@@ -98,7 +99,7 @@ public class TeamCommand {
                 /* ---------- TEAM MEMBERSHIPS ---------- */
                 .then(Commands.literal("invite")
                         .requires(CommandUtil.PLAYER_ONLY_REQUIREMENT)
-                        .then(Commands.argument("player", ArgumentTypes.playerProfiles())
+                        .then(Commands.argument("player", new OfflinePlayerArgument())
                                 .executes(this::teamInviteExecutor)
                         )
                 )
@@ -280,21 +281,19 @@ public class TeamCommand {
         TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
         TeamUtil.checkPlayerOwnsTeam(sender, team);
 
-        final PlayerProfileListResolver targetResolver = context.getArgument("player", PlayerProfileListResolver.class);
-        final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
-        final var playerProfile = targetProfiles.iterator().next();
+        final OfflinePlayer targetPlayer = context.getArgument("player", OfflinePlayer.class);
 
-        var isOwner = plugin.getTeamService().isPlayerTeamOwner(playerProfile.getId(), team);
+        var isOwner = plugin.getTeamService().isPlayerTeamOwner(targetPlayer.getUniqueId(), team);
         if (isOwner) {
             sender.sendMessage(Component.translatable("team.error.cannot_kick_owner").color(NamedTextColor.RED));
             return Command.SINGLE_SUCCESS;
         }
 
         try {
-            plugin.getTeamService().removePlayerFromTeam(team, playerProfile.getId());
+            plugin.getTeamService().removePlayerFromTeam(team, targetPlayer.getUniqueId());
 
             sender.sendMessage(Component.translatable("team.success.kick",
-                    Component.text(Objects.requireNonNullElse(playerProfile.getName(), "UNKNOWN")))
+                    Component.text(Objects.requireNonNullElse(targetPlayer.getName(), "UNKNOWN")))
                     .color(NamedTextColor.GREEN)
             );
         } catch (TeamServiceException ex) {
@@ -307,21 +306,14 @@ public class TeamCommand {
         Player sender = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         TeamCacheRecord team = TeamUtil.getCurrentPlayerTeamFromCache(sender);
 
-        final PlayerProfileListResolver targetResolver = context.getArgument("player", PlayerProfileListResolver.class);
-        final Collection<PlayerProfile> targetProfiles = targetResolver.resolve(context.getSource());
-        final var playerProfile = targetProfiles.iterator().next();
-
-        if (playerProfile == null)
-            throw new IllegalArgumentException("Player is null");
-        if (playerProfile.getId() == null)
-            throw new IllegalArgumentException("Player UUID is null");
+        final OfflinePlayer targetPlayer = context.getArgument("player", OfflinePlayer.class);
 
         try {
             // Initialize Team Invite \\
-            plugin.getTeamService().invitePlayerToTeam(team, playerProfile.getId());
+            plugin.getTeamService().invitePlayerToTeam(team, targetPlayer.getUniqueId());
 
             sender.sendMessage(Component.translatable("team.success.invite",
-                            Component.text(Objects.requireNonNullElse(playerProfile.getName(), playerProfile.getId().toString()))
+                            Component.text(Objects.requireNonNullElse(targetPlayer.getName(), targetPlayer.getUniqueId().toString()))
                     ).color(NamedTextColor.GREEN)
             );
         } catch (TeamServiceException ex) {
