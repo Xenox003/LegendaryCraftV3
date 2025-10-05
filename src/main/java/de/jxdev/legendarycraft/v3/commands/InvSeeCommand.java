@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.jxdev.legendarycraft.v3.LegendaryCraft;
 import de.jxdev.legendarycraft.v3.argument.OfflinePlayerArgument;
+import de.jxdev.legendarycraft.v3.invsee.target.InvseePlayerSession;
 import de.jxdev.legendarycraft.v3.util.CommandUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -26,7 +27,7 @@ public class InvSeeCommand {
         Player viewer = CommandUtil.getPlayerFromCommandSender(context.getSource().getSender());
         OfflinePlayer offlineTarget = context.getArgument("player", OfflinePlayer.class);
 
-        LegendaryCraft.getInstance().getInvSeeController().open(viewer, offlineTarget);
+        LegendaryCraft.getInstance().getInvSeeController().open(viewer, new InvseePlayerSession(offlineTarget));
         return 0;
     }
 }
