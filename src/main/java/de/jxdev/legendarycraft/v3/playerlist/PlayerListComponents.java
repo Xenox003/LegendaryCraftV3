@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 public class PlayerListComponents {
     public static Component getPlayerListHeader() {
         return Component.text("")
-                .append(Component.text(" LegendaryCraft V3 \n", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .append(Component.text(" LegendaryCraft 3 \n", NamedTextColor.GOLD, TextDecoration.BOLD))
                 .append(Component.text(" Powered by jxdev.de \n", NamedTextColor.DARK_GRAY))
                 .append(Component.text(""));
     }
