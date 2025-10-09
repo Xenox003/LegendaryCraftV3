@@ -164,8 +164,8 @@ public final class LegendaryCraft extends JavaPlugin {
                 LiteralCommandNode<CommandSourceStack> spawnCommand = new SpawnCommand().getCommand();
                 commands.registrar().register(spawnCommand);
 
-                LiteralCommandNode<CommandSourceStack> invseeCommand = new InvSeeCommand().getCommand();
-                commands.registrar().register(invseeCommand);
+                //LiteralCommandNode<CommandSourceStack> invseeCommand = new InvSeeCommand().getCommand();
+                //commands.registrar().register(invseeCommand);
             });
 
             // Player List Update Scheduler \\
@@ -187,9 +187,9 @@ public final class LegendaryCraft extends JavaPlugin {
             ), this);
             Bukkit.getPluginManager().registerEvents(offlinePlayerCache, this);
 
-            File worldFolder = Bukkit.getWorlds().getFirst().getWorldFolder();
-            this.invSeeController = new InvSeeController(this, worldFolder);
-            Bukkit.getPluginManager().registerEvents(invSeeController, this);
+            //File worldFolder = Bukkit.getWorlds().getFirst().getWorldFolder();
+            //this.invSeeController = new InvSeeController(this, worldFolder);
+            //Bukkit.getPluginManager().registerEvents(invSeeController, this);
 
             getLogger().info("Plugin initialized.");
         } catch (Exception ex) {
