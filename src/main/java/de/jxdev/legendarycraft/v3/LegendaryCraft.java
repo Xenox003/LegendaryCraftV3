@@ -176,7 +176,6 @@ public final class LegendaryCraft extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this.teamChatService, this.teamService), this);
             Bukkit.getPluginManager().registerEvents(new ColoredAnvilListener(), this);
             Bukkit.getPluginManager().registerEvents(new ColoredSignListener(), this);
-            Bukkit.getPluginManager().registerEvents(new PlayerHeadDropListener(), this);
             Bukkit.getPluginManager().registerEvents(new ChestProtectListener(this.chestService, this.teamService), this);
             Bukkit.getPluginManager().registerEvents(new CombatTagListener(this.spawnDebuffService), this);
             Bukkit.getPluginManager().registerEvents(new SpawnElytraListener(

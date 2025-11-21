@@ -11,7 +11,9 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 public class SpawnCommand {
@@ -42,8 +44,11 @@ public class SpawnCommand {
             }
         }
 
-        Location spawn = player.getWorld().getSpawnLocation();
-        player.teleportAsync(spawn);
+        World overworld = Bukkit.getWorld("world"); // default overworld name
+        if (overworld != null) {
+            Location spawn = overworld.getSpawnLocation();
+            player.teleportAsync(spawn);
+        }
         debiffsSafeRecord(debuffs, player);
         return Command.SINGLE_SUCCESS;
     }
